@@ -1,0 +1,12 @@
+
+> frontend@0.0.0 build
+> tsc -b && vite build
+
+src/components/commission/AddDistributionForm.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/components/commission/DistributionRow.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
+src/components/commission/EarningsOverviewCard.tsx(1,1): error TS6192: All imports in import declaration are unused.
+src/components/commission/EarningsOverviewCard.tsx(2,10): error TS6133: 'IndianRupee' is declared but its value is never read.
+src/components/commission/EarningsOverviewCard.tsx(2,23): error TS6133: 'TrendingUp' is declared but its value is never read.
+src/components/commission/EarningsOverviewCard.tsx(3,1): error TS6133: 'Lead' is declared but its value is never read.
+src/components/commission/EarningsOverviewCard.tsx(4,1): error TS6133: 'calculateNetEarning' is declared but its value is never read.
+src/components/commission/LeadEarningsSummaryCard.tsx(1,8): error TS6133: 'React' is declared but its value is never read.

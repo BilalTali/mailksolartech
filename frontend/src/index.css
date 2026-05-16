@@ -1,0 +1,319 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Noto+Sans:wght@300;400;500;600&family=Fira+Code:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Shimmer sweep across progress fill (close + ready states) */
+@keyframes shimmerSweep {
+  0%   { left: -70%; }
+  100% { left: 140%; }
+}
+
+/* Confetti particles bursting up on READY cards */
+@keyframes confettiPop {
+  0%   { opacity: 0;   transform: translateY(0)     scale(0)    rotate(0deg);   }
+  12%  { opacity: 1;   transform: translateY(-8px)  scale(1)    rotate(30deg);  }
+  55%  { opacity: 0.8; transform: translateY(-30px) scale(0.75) rotate(200deg); }
+  100% { opacity: 0;   transform: translateY(-52px) scale(0)    rotate(400deg); }
+}
+
+/* Banner shimmer sweep (ready banner only) */
+@keyframes bannerSweep {
+  0%   { left: -80%; }
+  100% { left: 160%; }
+}
+
+/* Card glow pulse for CLOSE state */
+@keyframes closeGlow {
+  0%,100% { box-shadow: 0 0 0 1px rgba(245,158,11,.10), 0 10px 40px rgba(245,158,11,.14); }
+  50%      { box-shadow: 0 0 0 1px rgba(245,158,11,.20), 0 10px 55px rgba(245,158,11,.28); }
+}
+
+/* Card glow pulse for READY state */
+@keyframes readyGlow {
+  0%,100% { box-shadow: 0 0 0 1px rgba(255,215,0,.14), 0 10px 50px rgba(255,215,0,.22); }
+  50%      { box-shadow: 0 0 0 1px rgba(255,215,0,.26), 0 10px 70px rgba(255,215,0,.40); }
+}
+
+/* Prize image glow on READY card */
+@keyframes prizeGlow {
+  0%,100% { box-shadow: 0 0 18px rgba(255,215,0,.20); }
+  50%      { box-shadow: 0 0 28px rgba(255,215,0,.40); }
+}
+
+/* Energy beam for timeline */
+@keyframes energyBeam {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Solar core glow pulse */
+@keyframes solarGlow {
+  0%, 100% { filter: drop-shadow(0 0 15px rgba(255, 149, 0, 0.3)); opacity: 0.8; }
+  50% { filter: drop-shadow(0 0 30px rgba(255, 149, 0, 0.6)); opacity: 1; }
+}
+
+/* Floating particle effect */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(5deg); }
+}
+
+/* Continuous slow rotation for solar corona rings */
+@keyframes rotateSlow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Counter-rotation for inner ring */
+@keyframes rotateSlowReverse {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-360deg); }
+}
+
+/* Energy beam sweeping through pipeline connector */
+@keyframes beamFlow {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Node ping ripple for active milestone */
+@keyframes nodePin {
+  0%   { transform: scale(1);   opacity: 0.8; }
+  70%  { transform: scale(2.2); opacity: 0; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* Subtle upward drift for floating particles */
+@keyframes driftUp {
+  0%   { transform: translateY(0)    opacity(1); }
+  100% { transform: translateY(-80px); opacity: 0; }
+}
+
+/* Search bar glow breathe */
+@keyframes glowBreathe {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,149,0,0); }
+  50%       { box-shadow: 0 0 30px 6px rgba(255,149,0,0.15); }
+}
+
+/* Progress ring animation */
+@keyframes dashReveal {
+  from { stroke-dashoffset: 251; }
+  to   { stroke-dashoffset: var(--target-dash); }
+}
+
+@layer base {
+  body {
+    @apply font-body text-dark antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-display;
+  }
+  p {
+    @apply leading-relaxed tracking-wide;
+  }
+  
+  h1, h2, h3 {
+    @apply tracking-tight;
+  }
+}
+
+@layer components {
+
+  /* Buttons */
+  .btn-primary {
+    @apply bg-gradient-to-r from-primary to-primary-light text-white font-bold px-8 py-3 rounded-xl hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:scale-95 transition-all duration-300;
+  }
+  
+  .btn-accent {
+    @apply bg-gradient-to-r from-accent to-accent-dark text-white font-bold px-8 py-3 rounded-xl hover:shadow-lg hover:shadow-accent/20 hover:-translate-y-0.5 active:scale-95 transition-all duration-300;
+  }
+
+  .btn-ghost {
+    @apply border-2 border-primary/20 text-primary font-bold px-8 py-3 rounded-xl hover:bg-primary hover:text-white hover:border-primary transition-all duration-300;
+  }
+
+  .btn-danger {
+    @apply bg-danger text-white font-bold px-8 py-3 rounded-xl hover:opacity-90 active:scale-95 transition-all duration-200;
+  }
+
+  /* Cards */
+  .card {
+    @apply bg-white rounded-card shadow-card p-8 border border-neutral-100 hover:shadow-premium transition-all duration-500;
+  }
+
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-glass rounded-card;
+  }
+
+  .glass-dark {
+    @apply bg-dark/70 backdrop-blur-xl border border-white/10 shadow-glass rounded-card;
+  }
+
+  /* Inputs */
+  .input {
+    @apply w-full border border-neutral-200 bg-white/50 backdrop-blur-sm rounded-xl px-5 py-3.5 font-body focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all duration-300 text-dark placeholder:text-neutral-400;
+  }
+
+  .input-error {
+    @apply border-danger focus:ring-danger/5;
+  }
+
+  .label {
+    @apply block text-sm font-bold text-neutral-600 mb-2 uppercase tracking-wider;
+  }
+
+  /* Status Badges */
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-4 py-1.5 rounded-pill text-[10px] font-black uppercase tracking-[0.1em];
+  }
+
+  .badge-new {
+    @apply bg-gray-100 text-gray-700;
+  }
+
+  .badge-contacted {
+    @apply bg-blue-50 text-blue-700;
+  }
+
+  .badge-documents_collected {
+    @apply bg-yellow-50 text-yellow-700;
+  }
+
+  .badge-registered {
+    @apply bg-indigo-50 text-indigo-700;
+  }
+
+  .badge-at_bank {
+    @apply bg-violet-50 text-violet-700;
+  }
+
+  .badge-site_survey {
+    @apply bg-purple-50 text-purple-700;
+  }
+
+  .badge-installation_pending {
+    @apply bg-orange-50 text-orange-700;
+  }
+
+  .badge-installed {
+    @apply bg-teal-50 text-teal-700;
+  }
+
+  .badge-subsidy_applied {
+    @apply bg-cyan-50 text-cyan-700;
+  }
+
+  .badge-completed {
+    @apply bg-green-50 text-green-700;
+  }
+
+  .badge-rejected {
+    @apply bg-red-50 text-red-700;
+  }
+
+  .badge-on_hold {
+    @apply bg-amber-50 text-amber-700;
+  }
+
+  .badge-at_bank {
+    @apply bg-violet-50 text-violet-700;
+  }
+
+  .badge-commissioning {
+    @apply bg-emerald-50 text-emerald-700;
+  }
+
+  .badge-subsidy-req {
+    @apply bg-teal-50 text-teal-700;
+  }
+
+  .badge-subsidy {
+    @apply bg-blue-50 text-blue-700;
+  }
+
+  .badge-subsidy-paid {
+    @apply bg-green-50 text-green-700;
+  }
+
+  .badge-docs {
+    @apply bg-yellow-50 text-yellow-700;
+  }
+
+  .badge-survey {
+    @apply bg-purple-50 text-purple-700;
+  }
+
+  .badge-pending {
+    @apply bg-orange-50 text-orange-700;
+  }
+
+  .badge-invalid {
+    @apply bg-rose-50 text-rose-700;
+  }
+
+  .badge-duplicate {
+    @apply bg-slate-50 text-slate-700;
+  }
+
+  /* Custom Gradients */
+  .grad-primary {
+    @apply bg-gradient-to-br from-primary via-primary-light to-primary-dark;
+  }
+
+  .grad-accent {
+    @apply bg-gradient-to-br from-accent to-accent-dark;
+  }
+
+  .text-glow {
+    text-shadow: 0 0 15px rgba(255, 149, 0, 0.5);
+  }
+
+  /* Sidebar Dark */
+  .sidebar {
+    @apply bg-dark text-white border-r border-white/5;
+  }
+
+  .sidebar-item {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-neutral-400 hover:bg-white/10 hover:text-white transition-all duration-300 cursor-pointer;
+  }
+
+  .sidebar-item svg {
+    @apply transition-transform duration-300;
+  }
+
+  .sidebar-item:hover svg {
+    transform: scale(1.1);
+  }
+
+  .sidebar-item-active {
+    @apply bg-gradient-to-r from-accent/20 to-transparent text-accent font-bold border-l-4 border-accent shadow-[inset_4px_0_0_0_#FF9500];
+    @apply translate-x-1;
+  }
+
+  /* Stat Cards */
+  .stat-card {
+    @apply bg-white rounded-2xl shadow-sm p-6 flex items-start justify-between border-b-4 border-primary/5 hover:border-primary hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1A5FA8;
+  border-radius: 999px;
+}

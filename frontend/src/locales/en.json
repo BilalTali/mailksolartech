@@ -1,0 +1,25 @@
+{
+  "common": {
+    "welcome": "Welcome to AndleebSurya",
+    "cta_apply": "Apply Now",
+    "cta_track": "Track Application",
+    "footer_rights": "All rights reserved. Powered by BilalTali."
+  },
+  "home": {
+    "hero_title": "PM Surya Ghar Muft Bijli Yojana",
+    "hero_subtitle": "Get up to 300 units free electricity every month. Expert guidance, free service, zero hassle.",
+    "hero_cta_primary": "Get Free Electricity",
+    "hero_cta_secondary": "Become a Partner",
+    "stats_installations": "Installations",
+    "stats_families": "Solar Families",
+    "stats_co2": "CO2 Offset"
+  },
+  "nav": {
+    "home": "Home",
+    "benefits": "Benefits",
+    "guide": "Guide",
+    "calculator": "Calculator",
+    "track_status": "Track Status",
+    "login": "Login"
+  }
+}

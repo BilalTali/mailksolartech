@@ -1,0 +1,48 @@
+# PM Surya Ghar — Production Root Redirect Handler
+# Handles routing between React SPA and Laravel Backend
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # PHASE 1: Route Dynamic Backend Request to Laravel index.php
+  # ─────────────────────────────────────────────────────────────────────────────
+  
+  RewriteRule ^api/(.*)$ backend/public/index.php [L,QSA]
+  RewriteRule ^document-view/(.*)$ backend/public/index.php [L,QSA]
+  RewriteRule ^icard-download/(.*)$ backend/public/index.php [L,QSA]
+  RewriteRule ^icard-download2/(.*)$ backend/public/index.php [L,QSA]
+  RewriteRule ^joining-letter-download/(.*)$ backend/public/index.php [L,QSA]
+  RewriteRule ^verify/(.*)$ backend/public/index.php [L,QSA]
+  RewriteRule ^sitemap\.xml$ backend/public/index.php [L,QSA]
+  RewriteRule ^robots\.txt$ backend/public/index.php [L,QSA]
+  RewriteRule ^favicon\.ico$ backend/public/index.php [L,QSA]
+  RewriteRule ^icons/(.*)$ backend/public/index.php [L,QSA]
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # PHASE 2: Handle Backend 404s (Prevent SPA Fallback)
+  # ─────────────────────────────────────────────────────────────────────────────
+  
+  # For backend-specific prefixes, if the file doesn't exist AND it's not a dynamic route, return 404
+  # instead of falling through to the React SPA index.html.
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_URI} ^/(api|storage|document-view|icard-download|icard-download2|joining-letter-download|verify|favicon\.ico|icons)
+  RewriteRule ^ - [L,R=404]
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # PHASE 3: Handle React SPA (Routing Fallback)
+  # ─────────────────────────────────────────────────────────────────────────────
+  
+  # Standard React SPA Routing
+  RewriteRule ^index\.html$ - [L]
+  
+  # Fallback for all other routes to React SPA
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
+
+AddType application/manifest+json .webmanifest
+AddType application/manifest+json .json
