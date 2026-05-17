@@ -40,6 +40,18 @@ if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php'))
     require $maintenance;
 }
 
+// Auto-restore .env from .env.production if it was deleted by a Git Webhook
+if (!file_exists(__DIR__.'/../.env') && file_exists(__DIR__.'/../.env.production')) {
+    copy(__DIR__.'/../.env.production', __DIR__.'/../.env');
+}
+
+if (!file_exists(__DIR__.'/../vendor/autoload.php')) {
+    http_response_code(500);
+    echo "<h1>500 Internal Server Error</h1>";
+    echo "<p>Vendor directory missing. Please run 'composer install' or commit the vendor/ directory to Git.</p>";
+    exit;
+}
+
 // Register the Composer autoloader...
 require __DIR__.'/../vendor/autoload.php';
 
