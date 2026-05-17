@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { settingsApi } from '@/services/settings.api';
 import api from '@/services/axios';
 import { compressImage } from '@/utils/imageUtils';
+import { SettingJsonEditor } from '@/components/admin/SettingJsonEditor';
 
 type TabId = 'identity' | 'homepage' | 'icard' | 'letter';
 
@@ -168,10 +169,6 @@ export default function SuperAdminPortalSettings() {
     };
 
     const handleInput = (key: string, value: string) => setLocalSettings(p => ({ ...p, [key]: value }));
-
-    const handleJsonInput = (key: string, value: string) => {
-        setLocalSettings(p => ({ ...p, [key]: value }));
-    };
 
 
 
@@ -373,14 +370,61 @@ export default function SuperAdminPortalSettings() {
                             </div>
                         </div>
 
-                        <div>
-                            <h3 className="font-black text-slate-800 mb-4 border-b border-slate-100 pb-2">JSON Configurations (Advanced)</h3>
-                            <div className="grid grid-cols-1 gap-6">
-                                <Field k="hero_stats_json" label="Hero Stats (JSON)" type="textarea" value={localSettings.hero_stats_json || ''} onChange={handleJsonInput} />
-                                <Field k="how_it_works_json" label="How It Works Steps (JSON)" type="textarea" value={localSettings.how_it_works_json || ''} onChange={handleJsonInput} />
-                                <Field k="why_choose_us_json" label="Why Choose Us (JSON)" type="textarea" value={localSettings.why_choose_us_json || ''} onChange={handleJsonInput} />
-                                <Field k="eligibility_questions_json" label="Eligibility Questions (JSON)" type="textarea" value={localSettings.eligibility_questions_json || ''} onChange={handleJsonInput} />
-                                <Field k="calculator_values_json" label="Calculator Values (JSON)" type="textarea" value={localSettings.calculator_values_json || ''} onChange={handleJsonInput} />
+                        <div className="space-y-8">
+                            <h3 className="font-black text-slate-800 mb-4 border-b border-slate-100 pb-2">Interactive Section Configurations</h3>
+                            
+                            <SettingJsonEditor 
+                                label="Hero Stats"
+                                value={localSettings.hero_stats_json || '[]'}
+                                onChange={v => setLocalSettings(p => ({ ...p, hero_stats_json: v }))}
+                                fields={[
+                                    { key: 'icon', label: 'Lucide Icon Name', type: 'text' },
+                                    { key: 'value', label: 'Value (e.g. 300 Units)', type: 'text' },
+                                    { key: 'label', label: 'Label (e.g. Free / Month)', type: 'text' }
+                                ]}
+                            />
+
+                            <div className="pt-6 border-t border-slate-100">
+                                <SettingJsonEditor 
+                                    label="How It Works Steps"
+                                    value={localSettings.how_it_works_json || '[]'}
+                                    onChange={v => setLocalSettings(p => ({ ...p, how_it_works_json: v }))}
+                                    fields={[
+                                        { key: 'icon', label: 'Lucide Icon Name', type: 'text' },
+                                        { key: 'step', label: 'Step Number', type: 'text' },
+                                        { key: 'title', label: 'Step Title', type: 'text' },
+                                        { key: 'desc', label: 'Description', type: 'textarea' }
+                                    ]}
+                                />
+                            </div>
+
+                            <div className="pt-6 border-t border-slate-100">
+                                <SettingJsonEditor 
+                                    label="Why Choose Us Cards"
+                                    value={localSettings.why_choose_us_json || '[]'}
+                                    onChange={v => setLocalSettings(p => ({ ...p, why_choose_us_json: v }))}
+                                    fields={[
+                                        { key: 'icon', label: 'Lucide Icon Name', type: 'text' },
+                                        { key: 'title', label: 'Benefit Title', type: 'text' },
+                                        { key: 'desc', label: 'Description', type: 'textarea' }
+                                    ]}
+                                />
+                            </div>
+
+                            <div className="pt-6 border-t border-slate-100">
+                                <SettingJsonEditor 
+                                    label="Calculator Values"
+                                    value={localSettings.calculator_values_json || '[]'}
+                                    onChange={v => setLocalSettings(p => ({ ...p, calculator_values_json: v }))}
+                                    fields={[
+                                        { key: 'id', label: 'Identifier (e.g. 1kw)', type: 'text' },
+                                        { key: 'label', label: 'Display Label (e.g. 1 kW)', type: 'text' },
+                                        { key: 'central', label: 'Central Subsidy (₹)', type: 'number' },
+                                        { key: 'state', label: 'State Subsidy (₹)', type: 'number' },
+                                        { key: 'savings', label: 'Monthly Savings (₹)', type: 'number' },
+                                        { key: 'payback', label: 'Payback (Months)', type: 'number' }
+                                    ]}
+                                />
                             </div>
                         </div>
 
