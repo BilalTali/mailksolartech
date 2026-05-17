@@ -1,38 +1,48 @@
 <?php
-// Flush OPcache immediately on SAPI level
 if (function_exists('opcache_reset')) {
     opcache_reset();
-    echo "OPcache flushed successfully!\n\n";
-} else {
-    echo "opcache_reset function not available.\n\n";
 }
 
 header('Content-Type: text/plain; charset=utf-8');
 
-$logDir = __DIR__ . '/../storage/logs';
-echo "Log Directory: " . realpath($logDir) . "\n";
+echo "--- Directory Diagnostics ---\n";
+echo "Current directory: " . __DIR__ . "\n";
+echo "Parent directory: " . realpath(__DIR__ . '/..') . "\n\n";
 
-if (is_dir($logDir)) {
-    echo "Directory exists.\n";
-    $files = scandir($logDir);
-    echo "Files in Directory:\n";
-    print_r($files);
-} else {
-    echo "Directory does NOT exist.\n";
+function findLogFiles($dir, &$results = array()) {
+    $files = scandir($dir);
+    foreach ($files as $key => $value) {
+        $path = realpath($dir . DIRECTORY_SEPARATOR . $value);
+        if (!is_dir($path)) {
+            if (strpos($value, 'log') !== false || strpos($value, 'error') !== false) {
+                $results[] = $path;
+            }
+        } else if ($value != "." && $value != "..") {
+            // Only scan public, storage, bootstrap/cache to avoid deep heavy traversal
+            if (in_array($value, ['public', 'storage', 'bootstrap', 'logs', 'framework'])) {
+                findLogFiles($path, $results);
+            }
+        }
+    }
+    return $results;
 }
 
-$logFile = $logDir . '/laravel.log';
-echo "\nTarget Log File: " . $logFile . "\n";
-if (file_exists($logFile)) {
-    echo "Log file exists. Size: " . filesize($logFile) . " bytes\n";
-    $lines = 150;
-    $data = file($logFile);
-    $lineCount = count($data);
-    echo "Total Log Lines: " . $lineCount . "\n\n";
-    $start = max(0, $lineCount - $lines);
-    for ($i = $start; $i < $lineCount; $i++) {
-        echo $data[$i];
+$foundLogs = [];
+findLogFiles(realpath(__DIR__ . '/..'), $foundLogs);
+
+echo "Found Log/Error Files:\n";
+print_r($foundLogs);
+
+foreach ($foundLogs as $file) {
+    echo "\n=== Contents of $file (Last 50 lines) ===\n";
+    if (is_readable($file)) {
+        $lines = file($file);
+        $count = count($lines);
+        $start = max(0, $count - 50);
+        for ($i = $start; $i < $count; $i++) {
+            echo $lines[$i];
+        }
+    } else {
+        echo "File is NOT readable.\n";
     }
-} else {
-    echo "Log file does not exist.\n";
 }
