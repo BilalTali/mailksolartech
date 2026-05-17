@@ -28,8 +28,7 @@ jobs:
             echo "--- 1. Engaging Maintenance Mode ---"
             php artisan down --render="errors::503" --secret="malik-deploy-bypass" || true
 
-            echo "--- 2. Delete stale vendor and reinstall cleanly ---"
-            rm -rf vendor
+            echo "--- 2. Reinstalling Dependencies cleanly ---"
             composer install --no-dev --optimize-autoloader
 
             echo "--- 3. Running Database Migrations ---"
