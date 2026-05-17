@@ -89,7 +89,9 @@ class LeadService
             }
 
             // Auto-create consumer portal account
-            try { $this->consumerService->createForLead($lead); } catch (\Exception $e) {}
+            try { $this->consumerService->createForLead($lead); } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning("Consumer portal creation failed for lead {$lead->ulid}: " . $e->getMessage());
+            }
 
             $this->logStatusChange($lead, null, null, 'NEW', 'Lead received from public form'.($referralCode ? " (Ref: {$referralCode})" : ''));
 
@@ -143,7 +145,9 @@ class LeadService
             }
 
             // Auto-create consumer portal account
-            try { $this->consumerService->createForLead($lead); } catch (\Exception $e) {}
+            try { $this->consumerService->createForLead($lead); } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning("Consumer portal creation failed for lead {$lead->ulid}: " . $e->getMessage());
+            }
 
             $this->logStatusChange($lead, $agent->id, null, 'NEW', 'Lead submitted by agent');
 
@@ -184,7 +188,9 @@ class LeadService
             }
 
             // Auto-create consumer portal account
-            try { $this->consumerService->createForLead($lead); } catch (\Exception $e) {}
+            try { $this->consumerService->createForLead($lead); } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning("Consumer portal creation failed for lead {$lead->ulid}: " . $e->getMessage());
+            }
 
             $this->logStatusChange($lead, $enumerator->id, null, 'NEW', "Lead submitted by enumerator {$enumerator->name}");
             
@@ -230,7 +236,9 @@ class LeadService
             }
 
             // Auto-create consumer portal account
-            try { $this->consumerService->createForLead($lead); } catch (\Exception $e) {}
+            try { $this->consumerService->createForLead($lead); } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning("Consumer portal creation failed for lead {$lead->ulid}: " . $e->getMessage());
+            }
 
             $this->logStatusChange($lead, $sa->id, null, 'NEW', "Lead created by Super Agent {$sa->name}");
             
@@ -260,7 +268,9 @@ class LeadService
         }
 
         return DB::transaction(function () use ($lead, $agent, $notes) {
-            $hasSuperAgent = ! is_null($agent->super_agent_id);
+            // MED-09 FIX: Use the lead's assigned SA, not the agent's personal super_agent_id.
+            // These can differ when an admin assigns a lead to an agent under a different SA.
+            $hasSuperAgent = ! is_null($lead->assigned_super_agent_id ?? $agent->super_agent_id);
 
             $lead->forceFill([
                 'verification_status' => $hasSuperAgent ? 'pending_super_agent_verification' : 'not_required',
@@ -312,6 +322,19 @@ class LeadService
         }
 
         return DB::transaction(function () use ($lead, $agent, $reason) {
+            // HIGH-08: Guard against reverting leads that already have paid commissions.
+            // Also revoke any unpaid commission entries and revert offer points.
+            $hasPaidCommissions = \App\Models\Commission::where('lead_id', $lead->id)
+                ->where('payment_status', 'paid')
+                ->exists();
+
+            if ($hasPaidCommissions) {
+                abort(422, 'Cannot revert lead — financial commissions have already been disbursed/paid.');
+            }
+
+            $this->commissionService->revokeUnpaidCommissions($lead, $agent);
+            $this->offerService->revertPoints($lead);
+
             $newRevertCount = $lead->revert_count + 1;
 
             if ($newRevertCount >= 3) {
@@ -480,9 +503,26 @@ class LeadService
         }
 
         return DB::transaction(function () use ($lead, $correctedData, $agent) {
+            // CRIT-06 FIX: Whitelist correctedData to prevent agents from overwriting
+            // sensitive fields (owner_type, assigned_super_agent_id, commission_entry_status, etc.)
+            $allowed = [
+                'beneficiary_name', 'beneficiary_mobile', 'beneficiary_email',
+                'beneficiary_address', 'beneficiary_pincode', 'beneficiary_state',
+                'beneficiary_district', 'consumer_number', 'discom_name',
+                'roof_size', 'system_capacity', 'monthly_bill_amount',
+                'admin_notes', 'query_message',
+            ];
+
+            // MED-12 FIX: Route back to the correct verification stage.
+            // An enumerator lead under an Agent should return to agent verification,
+            // not skip straight to super agent verification.
+            $targetStatus = $lead->assigned_agent_id && ! $lead->submitted_by_agent_id
+                ? 'pending_agent_verification'
+                : 'pending_super_agent_verification';
+
             $lead->update([
-                ...$correctedData,
-                'verification_status' => 'pending_super_agent_verification',
+                ...collect($correctedData)->only($allowed)->toArray(),
+                'verification_status' => $targetStatus,
                 'revert_reason' => null,
             ]);
 
@@ -587,6 +627,20 @@ class LeadService
             $oldStatus = $lead->status;
             $changer = User::findOrFail($changedById);
 
+            // CRIT-07 FIX: Enforce role-based status transition restrictions.
+            // StatusTransitionService::canTransition() was built but never wired into this path.
+            if (! $changer->isAdmin() && ! $changer->isSuperAdmin()) {
+                $transitionService = app(\App\Services\StatusTransitionService::class);
+                if (! $transitionService->canTransition($changer, $lead, $newStatus)) {
+                    abort(403, "Your role ({$changer->role}) is not permitted to set status: {$newStatus}");
+                }
+            }
+
+            // Forward-only pipeline enforcement (admin is exempt from forward-only by design)
+            if (! $changer->isAdmin() && ! $changer->isSuperAdmin()) {
+                $this->pipelineService->assertForwardTransition($newStatus, $lead);
+            }
+
             // REVOKE UNPAID COMMISSIONS if moving backward from a commissionable state
             $oldPos = $this->pipelineService->positionOf($oldStatus);
             $newPos = $this->pipelineService->positionOf($newStatus);
@@ -629,7 +683,6 @@ class LeadService
 
             $lead->save();
 
-            // UPLOAD RECEIPT if provided
             // UPLOAD RECEIPT if provided
             if ($newStatus === 'LEAD_COMPLETED' && $receipt) {
                 $this->uploadDocument($lead, $receipt, 'receipt', $changedById);
@@ -795,7 +848,9 @@ class LeadService
     {
         $parts = explode('/', $coordPart);
         if (count($parts) <= 0) return 0;
-        if (count($parts) == 1) return $parts[0];
+        if (count($parts) == 1) return (float) $parts[0];
+        // MED-10 FIX: Guard against division by zero from malformed EXIF data.
+        if (floatval($parts[1]) == 0) return 0;
         return floatval($parts[0]) / floatval($parts[1]);
     }
 
@@ -815,58 +870,46 @@ class LeadService
 
     private function notifyAdminNewPublicLead(Lead $lead): void
     {
-        /** @var User|null $admin */
-        $admin = User::query()->where(fn ($q) => $q->where('role', 'admin'))->first();
-        if ($admin) {
-            $this->notificationService->send(
-                $admin->id, 'new_public_lead',
-                'New Public Lead Received',
-                "New public lead from {$lead->beneficiary_name}, {$lead->beneficiary_district}",
-                ['lead_ulid' => $lead->ulid]
-            );
-        }
+        // HIGH-06 FIX: Broadcast to ALL admins, not just the first() one.
+        $this->notificationService->notifyAdmins(
+            'new_public_lead',
+            'New Public Lead Received',
+            "New public lead from {$lead->beneficiary_name}, {$lead->beneficiary_district}",
+            ['lead_ulid' => $lead->ulid]
+        );
     }
 
     private function notifyAdminNewAgentLead(Lead $lead, User $agent): void
     {
-        /** @var User|null $admin */
-        $admin = User::query()->where(fn ($q) => $q->where('role', 'admin'))->first();
-        if ($admin) {
-            $this->notificationService->send(
-                $admin->id, 'new_agent_lead',
-                'New Agent Lead Submitted',
-                "Agent {$agent->agent_id} submitted a new lead: {$lead->ulid}",
-                ['lead_ulid' => $lead->ulid, 'agent_id' => $agent->id]
-            );
-        }
+        // HIGH-06 FIX: Broadcast to ALL admins.
+        $this->notificationService->notifyAdmins(
+            'new_agent_lead',
+            'New Agent Lead Submitted',
+            "Agent {$agent->agent_id} submitted a new lead: {$lead->ulid}",
+            ['lead_ulid' => $lead->ulid, 'agent_id' => $agent->id]
+        );
     }
 
     private function notifyAdminLeadVerified(Lead $lead, User $sa): void
     {
-        /** @var User|null $admin */
-        $admin = User::query()->where(fn ($q) => $q->where('role', 'admin'))->first();
-        if ($admin) {
-            $this->notificationService->send(
-                $admin->id, 'lead_verified',
-                'Lead Verified — Ready for Processing',
-                "Lead {$lead->ulid} verified by SA {$sa->super_agent_code} — ready for processing",
-                ['lead_ulid' => $lead->ulid, 'sa_id' => $sa->id]
-            );
-        }
+        // HIGH-06 FIX: Broadcast to ALL admins.
+        $this->notificationService->notifyAdmins(
+            'lead_verified',
+            'Lead Verified — Ready for Processing',
+            "Lead {$lead->ulid} verified by SA {$sa->super_agent_code} — ready for processing",
+            ['lead_ulid' => $lead->ulid, 'sa_id' => $sa->id]
+        );
     }
 
     private function notifyAdminLeadAutoEscalated(Lead $lead, User $sa, string $reason): void
     {
-        /** @var User|null $admin */
-        $admin = User::query()->where(fn ($q) => $q->where('role', 'admin'))->first();
-        if ($admin) {
-            $this->notificationService->send(
-                $admin->id, 'lead_auto_escalated',
-                'Lead Auto-Escalated (Max Reverts)',
-                "Lead {$lead->ulid} auto-escalated after 3 reverts. Reason: {$reason}",
-                ['lead_ulid' => $lead->ulid, 'sa_id' => $sa->id]
-            );
-        }
+        // HIGH-06 FIX: Broadcast to ALL admins.
+        $this->notificationService->notifyAdmins(
+            'lead_auto_escalated',
+            'Lead Auto-Escalated (Max Reverts)',
+            "Lead {$lead->ulid} auto-escalated after 3 reverts. Reason: {$reason}",
+            ['lead_ulid' => $lead->ulid, 'sa_id' => $sa->id]
+        );
     }
 
     private function notifySuperAgentLeadPendingVerification(Lead $lead, User $agent): void
@@ -911,7 +954,7 @@ class LeadService
         }
     }
 
-    public function notifySuperAgentStatusChanged(Lead $lead, string $from, string $to, User $changer): void
+    private function notifySuperAgentStatusChanged(Lead $lead, string $from, string $to, User $changer): void
     {
         if (! $lead->assigned_super_agent_id) {
             return;
@@ -1002,7 +1045,7 @@ class LeadService
         );
     }
 
-    public function notifyAgentStatusChanged(Lead $lead, string $from, string $to, User $changer): void
+    private function notifyAgentStatusChanged(Lead $lead, string $from, string $to, User $changer): void
     {
         $agentId = $lead->assigned_agent_id ?? $lead->submitted_by_agent_id;
         if (! $agentId) {
@@ -1045,8 +1088,12 @@ class LeadService
             // Fallback: notify the admin whose team manages this lead via super agent
             if ($lead->assigned_super_agent_id) {
                 $sa = User::find($lead->assigned_super_agent_id);
-                if ($sa && $sa->parent_admin_id) {
-                    $adminIds[] = $sa->parent_admin_id;
+                // MED-11 FIX: parent_admin_id does not exist — use parent_id and verify it is an admin.
+                if ($sa && $sa->parent_id) {
+                    $parent = User::find($sa->parent_id);
+                    if ($parent && in_array($parent->role, ['admin', 'super_admin'], true)) {
+                        $adminIds[] = $parent->id;
+                    }
                 }
             }
         }
@@ -1076,7 +1123,7 @@ class LeadService
         }
     }
 
-    public function notifyEnumeratorStatusChanged(Lead $lead, string $from, string $to, User $changer): void
+    private function notifyEnumeratorStatusChanged(Lead $lead, string $from, string $to, User $changer): void
     {
         if (!$lead->submitted_by_enumerator_id) {
             return;

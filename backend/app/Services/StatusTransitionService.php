@@ -17,31 +17,25 @@ use App\Models\User;
  */
 class StatusTransitionService
 {
-    // ── Complete status set — sourced from LeadStatus enum ──────────────
+    // ── Complete status set — always derived from LeadStatus enum (CRIT-08 fix).
+    // Do NOT maintain a separate hardcoded list here — it will diverge.
+    public static function allStatuses(): array
+    {
+        return \App\Enums\LeadStatus::values();
+    }
+
+    // Legacy constant kept for backward compat with any direct reference — delegates to enum.
+    // @deprecated Use allStatuses() instead.
     public const ALL_STATUSES = [
-        'NEW',
-        'REJECTED',
-        'REGISTERED',
-        'SURVEY_DONE',
-        'LEAD_DOCUMENTS_PRINTED',
-        'SIGNATURE_PENDING',
-        'SIGNATURE_DONE',
-        'FILE_DISBURSED',
-        'DISBURSEMENT_VERIFIED',
-        'DISPATCH_INITIATED',
-        'IN_TRANSIT',
-        'DELIVERED',
-        'MATERIAL_VERIFIED_BY_CONSUMER',
-        'INSTALLATION_SCHEDULED',
-        'INSTALLATION_IN_PROGRESS',
-        'SOLAR_INSTALLED',
-        'POD_INSPECTION_INITIATED',
-        'POD_REJECTED',
-        'POD_SUCCESSFUL',
-        'PROJECT_COMMISSIONING',
-        'SUBSIDY_REQUEST',
-        'SUBSIDY_DISBURSED',
-        'LEAD_COMPLETED',
+        'NEW', 'REJECTED', 'REGISTERED', 'SURVEY_DONE',
+        'LEAD_DOCUMENTS_PRINTED', 'SIGNATURE_PENDING', 'SIGNATURE_DONE',
+        'FILE_SUBMITTED_TO_BANK', 'FILE_PENDING_DISBURSAL', 'FILE_DISBURSED',
+        'DISBURSEMENT_VERIFIED', 'DISPATCH_INITIATED', 'IN_TRANSIT', 'DELIVERED',
+        'MATERIAL_VERIFIED_BY_CONSUMER', 'INSTALLATION_SCHEDULED',
+        'INSTALLATION_IN_PROGRESS', 'SOLAR_INSTALLED', 'INSTALLATION_VERIFIED',
+        'INSTALLATION_COMPLETED', 'POD_INSPECTION_INITIATED', 'POD_REJECTED',
+        'POD_SUCCESSFUL', 'PROJECT_COMMISSIONING', 'SUBSIDY_REQUEST',
+        'SUBSIDY_APPLIED', 'SUBSIDY_DISBURSED', 'LEAD_COMPLETED',
     ];
 
     // ── Statuses the field_technical_team may set via geo-tagged visit ──
@@ -55,6 +49,7 @@ class StatusTransitionService
     public const GEOTAG_REQUIRED_STATUSES = [
         'SURVEY_DONE',
         'SOLAR_INSTALLED',
+        'INSTALLATION_VERIFIED',
         'POD_SUCCESSFUL',
     ];
 
@@ -66,6 +61,8 @@ class StatusTransitionService
         'LEAD_DOCUMENTS_PRINTED',
         'SIGNATURE_PENDING',
         'SIGNATURE_DONE',
+        'FILE_SUBMITTED_TO_BANK',   // MED-08: was missing
+        'FILE_PENDING_DISBURSAL',   // MED-08: was missing
         'FILE_DISBURSED',
     ];
 
@@ -78,13 +75,13 @@ class StatusTransitionService
     public function getAllowedStatuses(User $user, Lead $lead): array
     {
         // Admin / Super Admin — unrestricted
-        if ($user->isAdmin()) {
-            return self::ALL_STATUSES;
+        if ($user->isAdmin() || $user->isSuperAdmin()) {
+            return self::allStatuses();
         }
 
         // Operator — same as admin for status changes
         if ($user->isOperator()) {
-            return self::ALL_STATUSES;
+            return self::allStatuses();
         }
 
         // Field Technical Team — limited to geo-tagged statuses

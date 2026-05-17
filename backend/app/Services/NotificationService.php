@@ -20,16 +20,19 @@ class NotificationService
             'data' => $data,
         ]);
 
-        try {
-            $user = User::find($userId);
-            if ($user) {
-                // Determine the best redirect URL dynamically if absent
-                $url = $data['url'] ?? '/notifications';
-                $user->notify(new \App\Notifications\WebPushNotification($title, $message, $url));
+        // HIGH-09: Dispatch WebPush asynchronously — never block the calling HTTP request or DB transaction.
+        $notifId = $dbNotif->id;
+        dispatch(function () use ($userId, $title, $message, $data, $notifId) {
+            try {
+                $user = User::find($userId);
+                if ($user) {
+                    $url = $data['url'] ?? '/notifications';
+                    $user->notify(new \App\Notifications\WebPushNotification($title, $message, $url));
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('WebPush failed (queued): ' . $e->getMessage());
             }
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('WebPush failed: ' . $e->getMessage());
-        }
+        })->afterResponse();
 
         return $dbNotif;
     }
@@ -291,17 +294,19 @@ class NotificationService
     }
 
     /**
-     * Helper: notify the lead's assigned agent + super agent.
+     * Helper: notify the lead's assigned agent, super agent, and enumerator.
      * Does NOT send to the consumer account (they have their own portal).
      */
     private function notifyLeadContacts(\App\Models\Lead $lead, string $type, string $title, string $message): void
     {
         $notified = [];
 
+        // HIGH-10: Include enumerator in all pipeline milestone notifications.
         foreach ([
             $lead->assigned_agent_id,
             $lead->assigned_super_agent_id,
             $lead->submitted_by_agent_id,
+            $lead->submitted_by_enumerator_id,  // was missing
         ] as $userId) {
             if ($userId && ! in_array($userId, $notified)) {
                 $this->send($userId, $type, $title, $message);
