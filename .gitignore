@@ -86,6 +86,12 @@ backend/storage/app/public/*
 !backend/storage/app/public/branding/.gitignore
 !backend/storage/app/public/homepage/.gitignore
 
+# Protect secure lead documents and private storage from git clean
+backend/storage/app/leads/*
+!backend/storage/app/leads/.gitignore
+backend/storage/app/private/*
+!backend/storage/app/private/.gitignore
+
 Homestead.json
 Homestead.yaml
 **/caddy

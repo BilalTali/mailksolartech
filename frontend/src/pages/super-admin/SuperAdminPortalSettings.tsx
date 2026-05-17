@@ -210,6 +210,7 @@ export default function SuperAdminPortalSettings() {
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <Field k="company_name" label="Global Platform Name" value={localSettings.company_name || ''} onChange={handleInput} />
+                            <Field k="company_affiliated_with" label="Top Affiliator Name (For ID Card Back)" value={localSettings.company_affiliated_with || ''} onChange={handleInput} />
                             <Field k="company_email" label="Global Support Email" value={localSettings.company_email || ''} onChange={handleInput} />
                             <Field k="company_phone" label="Global Support Phone" value={localSettings.company_phone || ''} onChange={handleInput} />
                             <div className="md:col-span-2">
@@ -222,7 +223,7 @@ export default function SuperAdminPortalSettings() {
                             <FileUploadField settingKey="official_signature" label="Official Master Signature" accept="image/*" file={pendingFiles.official_signature} url={localSettings.official_signature} onSelect={(k, f) => setPendingFiles(p => ({...p, [k]: f}))} />
                         </div>
                         <div className="flex justify-end pt-6 border-t border-slate-100">
-                            <button onClick={() => saveSection(['company_name', 'company_email', 'company_phone', 'company_address', 'company_logo', 'company_favicon', 'official_signature'])} className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700">
+                            <button onClick={() => saveSection(['company_name', 'company_affiliated_with', 'company_email', 'company_phone', 'company_address', 'company_logo', 'company_favicon', 'official_signature'])} className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700">
                                 <Save className="w-4 h-4" /> Save Identity
                             </button>
                         </div>
