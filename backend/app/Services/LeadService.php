@@ -543,11 +543,11 @@ class LeadService
     public function resubmitLeadByEnumerator(Lead $lead, array $correctedData, User $enumerator): Lead
     {
         if ($lead->verification_status !== 'reverted_to_enumerator') {
-            throw new \App\Exceptions\InvalidLeadOperationException('Only leads reverted to you can be resubmitted.');
+            throw new InvalidLeadOperationException('Only leads reverted to you can be resubmitted.');
         }
 
         if ((int) $lead->submitted_by_enumerator_id !== (int) $enumerator->id) {
-            throw new \App\Exceptions\LeadAccessDeniedException('You can only resubmit your own leads.');
+            throw new LeadAccessDeniedException('You can only resubmit your own leads.');
         }
 
         return DB::transaction(function () use ($lead, $correctedData, $enumerator) {
