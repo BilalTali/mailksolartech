@@ -16,10 +16,10 @@ const SYSTEMS = [
   { id:"5kw",   label:"5 kW",   cost:258500, subsidy:94800,  share:163700, down:26500, uMin:500, uMax:600  },
   { id:"5.5kw", label:"5.5 kW", cost:279000, subsidy:94800,  share:184200, down:28500, uMin:550, uMax:650  },
   { id:"6kw",   label:"6 kW",   cost:308000, subsidy:94800,  share:213200, down:28500, uMin:600, uMax:700  },
-  { id:"7kw",   label:"7 kW",   cost:357500, subsidy:144300, share:213200, down:31800, uMin:600, uMax:700  },
-  { id:"8kw",   label:"8 kW",   cost:407000, subsidy:144300, share:262700, down:37000, uMin:700, uMax:900  },
-  { id:"9kw",   label:"9 kW",   cost:457000, subsidy:194300, share:262700, down:37000, uMin:700, uMax:1000 },
-  { id:"10kw",  label:"10 kW",  cost:507000, subsidy:145300, share:361700, down:46600, uMin:900, uMax:1100 },
+  { id:"7kw",   label:"7 kW",   cost:357500, subsidy:94800,  share:262700, down:31800, uMin:600, uMax:700  },
+  { id:"8kw",   label:"8 kW",   cost:407000, subsidy:94800,  share:312200, down:37000, uMin:700, uMax:900  },
+  { id:"9kw",   label:"9 kW",   cost:457000, subsidy:94800,  share:362200, down:37000, uMin:700, uMax:1000 },
+  { id:"10kw",  label:"10 kW",  cost:507000, subsidy:94800,  share:412200, down:46600, uMin:900, uMax:1100 },
 ];
 
 const inr  = (n: number) => "₹" + Math.round(n).toLocaleString("en-IN");
@@ -192,14 +192,7 @@ export default function SolarCalculator() {
             </div>
           </div>
 
-          {sys.id === "7kw" || sys.id === "8kw" || sys.id === "9kw" || sys.id === "10kw" ? (
-            <div className="mt-6 flex items-start gap-4 p-5 bg-blue-50/50 backdrop-blur-sm border border-blue-200/60 rounded-2xl text-blue-700">
-              <div className="p-2 bg-blue-100 rounded-full text-blue-600 shrink-0"><Lightbulb className="w-4 h-4"/></div>
-              <p className="text-sm font-medium leading-relaxed">
-                  For <strong>{sys.label}</strong> systems, the effective subsidy includes additional state or scheme benefits beyond the standard ₹94,800 central cap.
-              </p>
-            </div>
-          ) : null}
+
         </section>
 
         {/* ══ CALCULATOR 2: SAVINGS GRAPH ══ */}
@@ -337,7 +330,7 @@ export default function SolarCalculator() {
 
         <p className="text-center text-slate-400 text-xs mt-8 max-w-4xl mx-auto px-4 leading-relaxed font-medium">
           * Generation estimates based on average irradiance. Savings assume full self-consumption at ₹{rate}/unit.
-          For 7–10 kW systems, effective subsidy includes state + central scheme benefits. Consult your empanelled vendor for exact figures customized to your roof direction.
+          Consult your empanelled vendor for exact figures customized to your roof direction.
         </p>
       </div>
 
