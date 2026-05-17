@@ -240,6 +240,16 @@ export default function SuperAdminPortalSettings() {
                         <div>
                             <h3 className="font-black text-slate-800 mb-4 border-b border-slate-100 pb-2">Hero Section & Text</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="md:col-span-2 mb-4">
+                                    <FileUploadField 
+                                        settingKey="hero_video" 
+                                        label="Homepage Hero Background Video" 
+                                        accept="video/mp4,video/webm" 
+                                        file={pendingFiles.hero_video} 
+                                        url={localSettings.hero_video} 
+                                        onSelect={(k, f) => setPendingFiles(p => ({...p, [k]: f}))} 
+                                    />
+                                </div>
                                 <Field k="hero_headline" label="Hero Headline" value={localSettings.hero_headline || ''} onChange={handleInput} />
                                 <div className="md:col-span-2">
                                     <Field k="hero_subheadline" label="Hero Subheadline" type="textarea" value={localSettings.hero_subheadline || ''} onChange={handleInput} />
@@ -438,7 +448,7 @@ export default function SuperAdminPortalSettings() {
 
                         <div className="flex justify-end pt-6 border-t border-slate-100">
                             <button onClick={() => saveSection([
-                                'hero_headline', 'hero_subheadline', 'eligibility_headline', 'eligibility_subheadline',
+                                'hero_video', 'hero_headline', 'hero_subheadline', 'eligibility_headline', 'eligibility_subheadline',
                                 'calculator_headline', 'calculator_subheadline', 'hero_cta_primary_link', 'hero_cta_secondary_link',
                                 'eligibility_success_title', 'eligibility_error_title', 'eligibility_success_desc', 'eligibility_error_desc',
                                 'nav_home', 'nav_rewards', 'nav_portal_login', 'nav_cta_electricity', 'nav_calculator', 'nav_track_status', 'nav_guide',
