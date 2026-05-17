@@ -25,7 +25,7 @@ const schema = z.object({
         .length(10, 'Must be exactly 10 digits')
         .regex(/^[6-9]\d{9}$/, 'Invalid Indian mobile number'),
 
-    email: z.string().email('Invalid email address').or(z.literal('')).optional(),
+    email: z.string().email('Invalid email address'),
     state: z.string().min(1, 'Please select your state'),
     district: z.string().min(1, 'District is required'),
     area: z.string().min(1, 'Area / locality is required'),
@@ -339,7 +339,7 @@ export default function EnumeratorRegisterPage() {
 
                                     {/* Email */}
                                     <div className="sm:col-span-2">
-                                        <label className="label">Email Address <span className="text-neutral-400 text-xs">(optional)</span></label>
+                                        <label className="label">Email Address <span className="text-red-500">*</span></label>
                                         <div className="relative">
                                             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                                             <input

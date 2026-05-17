@@ -74,7 +74,7 @@ class SuperAgentEnumeratorController extends Controller
         $request->validate([
             'name'                  => 'required|string|max:255',
             'mobile'                => ['required', 'string', 'size:10', 'regex:/^[6-9]\d{9}$/', new GloballyUniqueMobile],
-            'email'                 => 'nullable|email|unique:users,email',
+            'email'                 => 'required|email|unique:users,email',
             'offer_point_threshold' => 'nullable|integer|min:0|max:200',
         ]);
 

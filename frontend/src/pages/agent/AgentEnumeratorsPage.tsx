@@ -277,7 +277,7 @@ export default function AgentEnumeratorsPage() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Email <span className="text-slate-400 font-normal">(Optional)</span></label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Email <span className="text-red-500">*</span></label>
                                 <input
                                     type="email"
                                     value={createForm.email}

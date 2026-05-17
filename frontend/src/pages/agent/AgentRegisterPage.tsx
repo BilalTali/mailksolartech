@@ -16,7 +16,7 @@ const schema = z.object({
     name: z.string().min(2, 'Full name is required'),
     mobile: z.string().length(10, 'Must be 10 digits').regex(/^[6-9]\d{9}$/, 'Invalid Indian mobile format'),
 
-    email: z.string().email('Invalid email address').or(z.literal('')).optional(),
+    email: z.string().email('Invalid email address'),
     password: z.string().min(8, 'Password must be at least 8 characters'),
     state: z.string().min(1, 'State is required'),
     district: z.string().min(1, 'District is required'),
@@ -115,7 +115,7 @@ export default function AgentRegisterPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-1 block">
-                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Email Address <span className="text-red-500">*</span></label>
                                 <input 
                                     {...register('email')} 
                                     type="email"

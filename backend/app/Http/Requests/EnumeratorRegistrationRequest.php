@@ -18,7 +18,7 @@ class EnumeratorRegistrationRequest extends FormRequest
             'name' => 'required|string|max:255',
             'mobile' => ['required', 'string', 'size:10', 'regex:/^[6-9]\d{9}$/', new \App\Rules\GloballyUniqueMobile],
 
-            'email' => 'nullable|email|unique:users,email',
+            'email' => 'required|email|unique:users,email',
             'state' => ['required', 'string', Rule::in(['Jammu & Kashmir', 'Ladakh'])],
             'district' => ['required', 'string', Rule::in([
                 'Srinagar', 'Baramulla', 'Anantnag', 'Pulwama', 'Kupwara', 'Budgam',
