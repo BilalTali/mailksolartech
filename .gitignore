@@ -98,8 +98,6 @@ backend/bootstrap/cache/*
 # Protect Hostinger uploads from git clean
 backend/storage/app/public/*
 !backend/storage/app/public/.gitignore
-!backend/storage/app/public/branding/
-!backend/storage/app/public/homepage/
 !backend/storage/app/public/branding/.gitignore
 !backend/storage/app/public/homepage/.gitignore
 
