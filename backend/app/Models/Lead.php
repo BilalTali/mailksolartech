@@ -212,9 +212,12 @@ class Lead extends Model
         ];
     }
 
+    // NOTE: 'commission_status' is intentionally NOT in $appends.
+    // It calls CommissionService->getCommissionStatus() which fires hierarchy
+    // DB queries for EVERY lead in a collection. Compute it only on-demand
+    // in the single-lead show() response via AdminLeadController::updateStatus().
     protected $appends = [
         'formatted_commissions',
-        'commission_status',
         'admin_net_earning',
     ];
 

@@ -43,6 +43,8 @@ class PipelineService
         'LEAD_DOCUMENTS_PRINTED',
         'SIGNATURE_PENDING',
         'SIGNATURE_DONE',
+        'FILE_SUBMITTED_TO_BANK',     // ← was missing: between SIGNATURE_DONE and FILE_PENDING_DISBURSAL
+        'FILE_PENDING_DISBURSAL',     // ← was missing
         'FILE_DISBURSED',
         'DISBURSEMENT_VERIFIED',
         'DISPATCH_INITIATED',
@@ -57,6 +59,7 @@ class PipelineService
         'POD_SUCCESSFUL',
         'PROJECT_COMMISSIONING',
         'SUBSIDY_REQUEST',
+        'SUBSIDY_APPLIED',            // ← was missing: between SUBSIDY_REQUEST and SUBSIDY_DISBURSED
         'SUBSIDY_DISBURSED',
         'LEAD_COMPLETED',
     ];

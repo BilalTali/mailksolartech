@@ -17,10 +17,19 @@ class EnsureIsAdminOrOperator
     {
         $user = $request->user();
 
-        if (! $user || (! $user->isAdmin() && ! $user->isOperator())) {
+        // Allow: admin, operator roles only (super_admin has its own guarded route group).
+        $allowedRoles = ['admin', 'operator'];
+        if (! $user || ! in_array($user->role, $allowedRoles, true)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Admin or Operator access required.'
+            ], 403);
+        }
+
+        if ($user->status !== 'active') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account is not active. Please contact support.',
             ], 403);
         }
 

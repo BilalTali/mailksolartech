@@ -304,21 +304,24 @@ class AdminCommissionController extends Controller
 
     public function updateAdminAllocation(Request $request, string $ulid): JsonResponse
     {
-        // Only super_admin should set this, but admin might view it. 
-        // We will allow admins to set it for testing purposes if they want, but in a real system, we'd add an explicit check.
+        // Only super_admin may set top-down allocation amounts.
+        if (! $request->user()->isSuperAdmin()) {
+            return response()->json(['success' => false, 'message' => 'Only Super Admin can set allocation amounts.'], 403);
+        }
+
         $request->validate([
-            'lead_revenue' => 'nullable|numeric|min:0',
-            'admin_received_commission' => 'required|numeric|min:0',
-            'admin_meeting_allowance' => 'required|numeric|min:0',
-            'admin_additional_expenses' => 'required|numeric|min:0',
+            'lead_revenue'                => 'nullable|numeric|min:0',
+            'admin_received_commission'   => 'required|numeric|min:0',
+            'admin_meeting_allowance'     => 'required|numeric|min:0',
+            'admin_additional_expenses'   => 'required|numeric|min:0',
         ]);
 
         $lead = Lead::query()->where('ulid', $ulid)->firstOrFail();
 
         $updateData = [
-            'admin_received_commission' => $request->admin_received_commission,
-            'admin_meeting_allowance' => $request->admin_meeting_allowance,
-            'admin_additional_expenses' => $request->admin_additional_expenses,
+            'admin_received_commission'   => $request->admin_received_commission,
+            'admin_meeting_allowance'     => $request->admin_meeting_allowance,
+            'admin_additional_expenses'   => $request->admin_additional_expenses,
         ];
 
         if ($request->has('lead_revenue')) {
@@ -330,24 +333,36 @@ class AdminCommissionController extends Controller
         $adminId = $lead->assigned_admin_id ?? User::roleAdmin()->first()?->id;
 
         if ($adminId) {
+            // Guard: never overwrite an existing PAID commission record.
+            $existing = Commission::where('lead_id', $lead->id)
+                ->where('payee_id', $adminId)
+                ->where('payee_role', 'admin')
+                ->first();
+
+            if ($existing && $existing->isPaid()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This commission has already been marked as paid and cannot be modified.',
+                ], 422);
+            }
+
             Commission::updateOrCreate(
                 [
-                    'lead_id' => $lead->id,
-                    'payee_id' => $adminId,
+                    'lead_id'    => $lead->id,
+                    'payee_id'   => $adminId,
                     'payee_role' => 'admin'
                 ],
                 [
-                    'amount' => $request->admin_received_commission + $request->admin_meeting_allowance + $request->admin_additional_expenses,
-                    'entered_by' => $request->user()->id,
-                    'trigger_status' => 'MANUAL_ALLOCATION',
-                    'triggered_at' => now(),
-                    'chain_type' => 'ALLOCATION',
+                    'amount'          => $request->admin_received_commission + $request->admin_meeting_allowance + $request->admin_additional_expenses,
+                    'entered_by'      => $request->user()->id,
+                    'trigger_status'  => 'MANUAL_ALLOCATION',
+                    'triggered_at'    => now(),
+                    'chain_type'      => 'ALLOCATION',
                     'hierarchy_level' => 0,
-                    // Avoid overwriting payment_status if it's already paid
                 ]
             );
 
-            if (!$lead->assigned_admin_id) {
+            if (! $lead->assigned_admin_id) {
                 $lead->update(['assigned_admin_id' => $adminId]);
             }
         }
@@ -355,7 +370,7 @@ class AdminCommissionController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Admin top-down allocation updated successfully.',
-            'data' => $lead->fresh(['commissions']),
+            'data'    => $lead->fresh(['commissions']),
         ]);
     }
 

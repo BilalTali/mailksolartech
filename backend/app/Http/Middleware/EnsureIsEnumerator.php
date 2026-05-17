@@ -16,13 +16,23 @@ class EnsureIsEnumerator
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->user() && $request->user()->role === 'enumerator') {
-            return $next($request);
+        $user = $request->user();
+
+        if (! $user || $user->role !== 'enumerator') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Enumerator access restricted.',
+            ], 403);
         }
 
-        return response()->json([
-            'success' => false,
-            'message' => 'Unauthorized. Enumerator access restricted.',
-        ], 403);
+        if ($user->status === 'pending') {
+            return response()->json(['success' => false, 'message' => 'Account pending approval.'], 403);
+        }
+
+        if ($user->status !== 'active') {
+            return response()->json(['success' => false, 'message' => 'Account is suspended or inactive.'], 403);
+        }
+
+        return $next($request);
     }
 }

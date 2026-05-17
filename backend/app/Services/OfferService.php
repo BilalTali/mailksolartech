@@ -198,6 +198,7 @@ class OfferService
         $isSA = $user->role === 'super_agent';
         $isAdmin = in_array($user->role, ['admin', 'super_admin']);
 
+        // Decrement from the submitter themselves
         if ($isAgent && in_array($offer->visible_to, ['agents', 'both'])) {
             $this->decrementProgress($offer, $user, $points, 'agent');
         }
@@ -210,14 +211,17 @@ class OfferService
             $this->decrementProgress($offer, $user, $points, 'admin');
         }
 
+        // MED-07 FIX: Walk the full commission chain — not just the direct super_agent_id.
+        // awardToUser() uses getCommissionChain() to award ancestors; revert must mirror it.
         if ($isAgent) {
-             $targetSAId = (int)$user->super_agent_id;
-             if ($targetSAId && in_array($offer->visible_to, ['super_agents', 'both'])) {
-                 $sa = User::find($targetSAId);
-                 if ($sa) {
-                     $this->decrementProgress($offer, $sa, $points, 'super_agent');
-                 }
-             }
+            $chain = $this->hierarchyService->getCommissionChain($user);
+            foreach ($chain as $ancestor) {
+                if ($ancestor->isSuperAgent() && in_array($offer->visible_to, ['super_agents', 'both'])) {
+                    $this->decrementProgress($offer, $ancestor, $points, 'super_agent');
+                } elseif ($ancestor->isAgent() && in_array($offer->visible_to, ['agents', 'both'])) {
+                    $this->decrementProgress($offer, $ancestor, $points, 'agent');
+                }
+            }
         }
     }
 
@@ -288,24 +292,13 @@ class OfferService
         }
     }
 
+    // checkAndNotifyMilestones() was previously here — removed (dead code).
+    // Threshold notifications are now handled inline inside incrementProgress().
+
     /**
-     * Recalculate derived fields
+     * Returns the point value for a given system capacity string.
+     * Looks up the capacity → points map from the 'capacity_points_json' Setting.
      */
-    private function recalculate(OfferProgress $progress, Offer $offer): void
-    {
-        $progress->refresh();
-        // No threshold deduction — absorption is handled at point-award time
-        $unredeemed = (float)$progress->total_points - (float)$progress->redeemed_points;
-        $canRedeem = $unredeemed >= $offer->target_points;
-
-        $progress->update([
-            'unredeemed_points'        => $unredeemed,
-            'can_redeem'               => $canRedeem,
-            'pending_redemption_count' => $canRedeem ? (int) floor($unredeemed / $offer->target_points) : 0,
-            'last_installation_at'     => now(),
-        ]);
-    }
-
     private function getPointsForCapacity(?string $capacity): float
     {
         $capacityRaw = strtolower(str_replace(' ', '', $capacity ?? ''));
@@ -326,37 +319,6 @@ class OfferService
         }
 
         return 0;
-    }
-
-    /**
-     * Notify agent at milestone points
-     */
-    private function checkAndNotifyMilestones(OfferProgress $progress, Offer $offer, User $agent): void
-    {
-        $target = $offer->target_points;
-        if ($target <= 0) {
-            return;
-        }
-
-        $progress->refresh();
-        $unredeemed = (float)$progress->unredeemed_points;
-        $toNext = $target - ($unredeemed % $target);
-
-        if ($toNext === $target) {
-            $toNext = 0;
-        } // If they just hit the target exactly
-
-        if (in_array($toNext, [5, 3, 1])) {
-            $this->notificationService->notifyOfferMilestone(
-                $offer, $agent, $toNext, $progress->pending_redemption_count
-            );
-        }
-
-        if ($progress->pending_redemption_count > 0 && ($unredeemed % $target) === 0) {
-            $this->notificationService->notifyOfferRedeemable(
-                $offer, $agent, $progress->pending_redemption_count
-            );
-        }
     }
 
     /**
@@ -567,7 +529,7 @@ class OfferService
     private function absorbPoints(
         Offer $offer,
         User $agent,
-        int $points,
+        float $points,
         string $reason,
         array &$stats
     ): void {
@@ -753,7 +715,7 @@ class OfferService
             $target = max(0.1, (float)$offer->target_points);
 
             // Progress within CURRENT redemption cycle
-            $cycleInstalls = ($target > 0) ? ($myUnredeemed % $target) : 0;
+            $cycleInstalls = ($target > 0) ? fmod($myUnredeemed, $target) : 0;
             $cycleNeeded = max(0, $target - $cycleInstalls);
 
             // Helper to safe-format dates

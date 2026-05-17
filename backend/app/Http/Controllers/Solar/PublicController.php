@@ -164,26 +164,35 @@ class PublicController extends Controller
     public function help()
     {
         $faqs = \App\Models\FAQ::published()->orderBy('sort_order')->get();
-        
-        $contacts = User::where('is_public_contact', true)
-            ->where('status', 'active')
-            ->select('id', 'name', 'district', 'state', 'whatsapp_number', 'role')
-            ->orderBy('public_contact_order')
-            ->get()
-            ->map(function ($user) {
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'district' => $user->district,
-                    'state' => $user->state,
-                    'whatsapp' => $user->whatsapp_number,
-                    'role' => strtoupper(str_replace('_', ' ', $user->role)),
-                ];
-            });
+
+        // Guard: is_public_contact / whatsapp_number / public_contact_order may not exist
+        // in all environments. Fail gracefully rather than returning a 500 to public visitors.
+        $contacts = [];
+        try {
+            $contacts = User::where('is_public_contact', true)
+                ->where('status', 'active')
+                ->select('id', 'name', 'district', 'state', 'whatsapp_number', 'role')
+                ->orderBy('public_contact_order')
+                ->get()
+                ->map(function ($user) {
+                    return [
+                        'id'       => $user->id,
+                        'name'     => $user->name,
+                        'district' => $user->district,
+                        'state'    => $user->state,
+                        'whatsapp' => $user->whatsapp_number,
+                        'role'     => strtoupper(str_replace('_', ' ', $user->role)),
+                    ];
+                })->toArray();
+        } catch (\Throwable $e) {
+            Log::warning('PublicController::help() contacts query failed — columns may be missing.', [
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return response()->json([
-            'faqs' => $faqs,
-            'contacts' => $contacts
+            'faqs'     => $faqs,
+            'contacts' => $contacts,
         ]);
     }
 }

@@ -15,10 +15,20 @@ class EnsureIsSuperAdmin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (! $request->user() || ! $request->user()->isSuperAdmin()) {
+        $user = $request->user();
+
+        if (! $user || ! $user->isSuperAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Super Admin access required.',
+            ], 403);
+        }
+
+        // Block suspended accounts even with a valid token.
+        if ($user->status !== 'active') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account is not active. Please contact support.',
             ], 403);
         }
 

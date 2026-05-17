@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class AuthController extends Controller
@@ -255,7 +256,13 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        $user = $request->user();
+
+        // Invalidate SuperAdmin security PIN session so a revoked token
+        // cannot be replayed against the super_admin route group.
+        Cache::forget('super-admin-security-unlocked:' . $user->id);
+
+        $user->currentAccessToken()->delete();
 
         return response()->json([
             'success' => true,

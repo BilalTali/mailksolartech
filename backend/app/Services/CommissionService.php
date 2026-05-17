@@ -618,38 +618,9 @@ class CommissionService
     }
 
     // ── Private notification helpers ──────────────────────────────────
-    private function notifySuperAgentCommissionEntered(Commission $c, User $sa, Lead $lead, float $amount, User $admin): void
-    {
-        $this->notificationService->send(
-            $sa->id,
-            'commission_entered',
-            '💰 Commission Entered for You',
-            "Admin has entered ₹{$amount} commission for lead {$lead->ulid} (Beneficiary: {$lead->beneficiary_name}).",
-            ['lead_ulid' => $lead->ulid, 'commission_id' => $c->id, 'amount' => $amount]
-        );
-    }
-
-    private function notifyAgentCommissionEntered(Commission $c, User $agent, Lead $lead, float $amount, User $sa): void
-    {
-        $this->notificationService->send(
-            $agent->id,
-            'commission_entered',
-            '💰 You Earned a Commission!',
-            "Your Super Agent {$sa->name} has entered ₹{$amount} as your commission for lead {$lead->ulid}.",
-            ['lead_ulid' => $lead->ulid, 'commission_id' => $c->id, 'amount' => $amount]
-        );
-    }
-
-    private function notifyAgentDirectCommissionEntered(Commission $c, User $agent, Lead $lead, float $amount, User $admin): void
-    {
-        $this->notificationService->send(
-            $agent->id,
-            'commission_entered',
-            '💰 Commission Entered by Admin',
-            "Admin has entered ₹{$amount} as your commission for lead {$lead->ulid}.",
-            ['lead_ulid' => $lead->ulid, 'commission_id' => $c->id, 'amount' => $amount]
-        );
-    }
+    // Note: notifySuperAgentCommissionEntered, notifyAgentCommissionEntered,
+    // and notifyAgentDirectCommissionEntered were removed (dead code).
+    // All commission notifications now use notificationService->send() directly inline.
 
     private function notifyPaymentMade(Commission $commission): void
     {

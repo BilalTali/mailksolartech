@@ -142,9 +142,18 @@ class AdminLeadController extends Controller
 
         $this->authorize('view', $lead);
 
+        // Compute commission_status on-demand (not via $appends, to avoid N+1 on index lists).
+        $commissionStatus = ($lead->status !== null)
+            ? app(\App\Services\CommissionService::class)->getCommissionStatus($lead)
+            : [];
+
         return response()->json([
-            'success' => true,
-            'data'    => $lead,
+            'success'           => true,
+            'data'              => $lead,
+            'commission_status' => [
+                'prompts'       => $commissionStatus,
+                'entry_status'  => $lead->commission_entry_status,
+            ],
         ]);
     }
 

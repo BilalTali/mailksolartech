@@ -152,8 +152,17 @@ class Commission extends Model
     // ── Helper Methods ────────────────────────────────────────────────
     public function isLocked(): bool
     {
-        // Commission is locked if it is already paid OR it was created more than 24 hours ago
-        return $this->isPaid() || ($this->created_at && $this->created_at->addHours(24)->isPast());
+        // Respect the explicit locked_at timestamp set at creation time.
+        // This allows different lock windows (24h for manual, 48h for auto-triggered).
+        // A commission with no locked_at falls back to the 24-hour created_at rule.
+        if ($this->isPaid()) {
+            return true;
+        }
+        if ($this->locked_at) {
+            return $this->locked_at->isPast();
+        }
+        // Fallback: treat as locked 24h after creation (legacy records without locked_at)
+        return $this->created_at && $this->created_at->addHours(24)->isPast();
     }
 
     public function isForSuperAgent(): bool

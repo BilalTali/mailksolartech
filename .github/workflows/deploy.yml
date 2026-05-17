@@ -13,15 +13,53 @@ jobs:
       - name: Wait for Hostinger Webhook Sync
         run: sleep 15 # Gives Hostinger 15 seconds to finish pulling the latest files
 
-      - name: Rebuild Backend via SSH
+      - name: Rebuild Backend via SSH (Atomic Deployment)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 82.25.107.68
           username: u596750690
           password: ${{ secrets.HOSTINGER_PASSWORD }}
           port: 65002
+          # Pass the OPcache token into the SSH session as an env var
+          envs: OPCACHE_RESET_TOKEN
           script: |
             cd domains/maliksolartech.com/public_html/backend
+
+            echo "--- 1. Engaging Maintenance Mode ---"
+            php artisan down --render="errors::503" --secret="malik-deploy-bypass" || true
+
+            echo "--- 2. Installing Composer Dependencies ---"
             composer install --no-dev --optimize-autoloader
-            php artisan optimize:clear
+
+            echo "--- 3. Running Database Migrations ---"
             php artisan migrate --force
+
+            echo "--- 4. Injecting Secrets into .env ---"
+            # Write OPCACHE_RESET_TOKEN into .env (add or update the line)
+            if grep -q "^OPCACHE_RESET_TOKEN=" .env; then
+              sed -i "s|^OPCACHE_RESET_TOKEN=.*|OPCACHE_RESET_TOKEN=${OPCACHE_RESET_TOKEN}|" .env
+            else
+              echo "OPCACHE_RESET_TOKEN=${OPCACHE_RESET_TOKEN}" >> .env
+            fi
+
+            echo "--- 5. Rebuilding Application Caches ---"
+            php artisan optimize:clear
+            php artisan config:cache
+            php artisan event:cache
+            php artisan view:cache
+
+            echo "--- 6. Verifying & Establishing Storage Symlink ---"
+            php artisan storage:link
+
+            echo "--- 7. Enforcing Correct Web Daemon Permissions ---"
+            chmod -R 775 storage bootstrap/cache || true
+
+            echo "--- 8. Bringing Application Online ---"
+            php artisan up
+        env:
+          OPCACHE_RESET_TOKEN: ${{ secrets.OPCACHE_RESET_TOKEN }}
+
+      - name: Flush Web Server In-Memory OPcache
+        run: |
+          echo "Triggering LiteSpeed OPcache Invalidation..."
+          curl -s "https://maliksolartech.com/backend/public/opcache-reset.php?token=${{ secrets.OPCACHE_RESET_TOKEN }}"
