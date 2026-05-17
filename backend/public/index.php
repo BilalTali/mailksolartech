@@ -23,14 +23,50 @@ if (strpos($uri, '/storage/') !== false) {
     if (file_exists($fullPath) && is_file($fullPath)) {
         $mime = mime_content_type($fullPath);
         // Fallback for missing mimetypes
-        if (!$mime) {
+        if (!$mime || $mime === 'application/octet-stream') {
             $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
-            $mimes = ['png' => 'image/png', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'pdf' => 'application/pdf', 'svg' => 'image/svg+xml', 'webp' => 'image/webp'];
+            $mimes = [
+                'png' => 'image/png', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg',
+                'pdf' => 'application/pdf', 'svg' => 'image/svg+xml', 'webp' => 'image/webp',
+                'mp4' => 'video/mp4', 'webm' => 'video/webm',
+            ];
             $mime = $mimes[$ext] ?? 'application/octet-stream';
         }
+        
+        $filesize = filesize($fullPath);
+        
+        // Basic Range request support (required for Safari/iOS video playback)
+        if (isset($_SERVER['HTTP_RANGE'])) {
+            if (preg_match('/bytes=\h*(\d+)-(\d*)[\D.*]?/i', $_SERVER['HTTP_RANGE'], $matches)) {
+                $begin = intval($matches[1]);
+                $end = !empty($matches[2]) ? intval($matches[2]) : $filesize - 1;
+                $length = ($end - $begin) + 1;
+                
+                header('HTTP/1.1 206 Partial Content');
+                header("Content-Type: $mime");
+                header("Cache-Control: public, max-age=31536000");
+                header("Accept-Ranges: bytes");
+                header("Content-Range: bytes $begin-$end/$filesize");
+                header("Content-Length: $length");
+                
+                $fp = fopen($fullPath, 'rb');
+                fseek($fp, $begin);
+                echo fread($fp, $length);
+                fclose($fp);
+                exit;
+            }
+        }
+        
         header('Content-Type: ' . $mime);
         header('Cache-Control: public, max-age=31536000');
+        header('Accept-Ranges: bytes');
+        header('Content-Length: ' . $filesize);
         readfile($fullPath);
+        exit;
+    } else {
+        // Fast 404 for missing storage files to avoid booting Laravel
+        http_response_code(404);
+        echo "404 Not Found: The requested media file was not found on the server. If this was uploaded recently, a Git deployment may have wiped it if it was untracked.";
         exit;
     }
 }
