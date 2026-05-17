@@ -82,6 +82,7 @@ export default function SuperAdminPortalSettings() {
     const [activeTab, setActiveTab] = useState<TabId>('identity');
     const [localSettings, setLocalSettings] = useState<Record<string, string>>({});
     const [pendingFiles, setPendingFiles] = useState<Record<string, File>>({});
+    const [isSaving, setIsSaving] = useState(false);
 
     const getQuestions = (): QuestionItem[] => {
         try {
@@ -126,16 +127,23 @@ export default function SuperAdminPortalSettings() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-settings'] });
             queryClient.invalidateQueries({ queryKey: ['public-settings'] });
-            toast.success('Platform settings saved');
         }
     });
 
     const uploadFileMutation = useMutation({
-        mutationFn: async ({ key, file }: { key: string; file: File }) => {
+        mutationFn: async ({ key, file, onProgress }: { key: string; file: File; onProgress?: (percent: number) => void }) => {
             const fd = new FormData();
             fd.append('key', key);
             fd.append('file', file);
-            const res = await api.post('/admin/settings/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+            const res = await api.post('/admin/settings/upload', fd, { 
+                headers: { 'Content-Type': 'multipart/form-data' },
+                onUploadProgress: (progressEvent) => {
+                    if (onProgress && progressEvent.total) {
+                        const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                        onProgress(percent);
+                    }
+                }
+            });
             return res.data;
         },
         onSuccess: (data, { key }) => {
@@ -148,23 +156,55 @@ export default function SuperAdminPortalSettings() {
     });
 
     const saveSection = async (keys: string[]) => {
-        for (const key of keys) {
-            if (pendingFiles[key]) {
-                await uploadFileMutation.mutateAsync({ key, file: pendingFiles[key] });
+        setIsSaving(true);
+        const loadingToast = toast.loading('Initiating save process...');
+        let hasFiles = false;
+        let hasChanges = false;
+
+        try {
+            for (const key of keys) {
+                if (pendingFiles[key]) {
+                    hasFiles = true;
+                    toast.loading(`Uploading ${key.replace('_', ' ')} (0%)...`, { id: loadingToast });
+                    await uploadFileMutation.mutateAsync({ 
+                        key, 
+                        file: pendingFiles[key],
+                        onProgress: (percent) => {
+                            toast.loading(`Uploading ${key.replace('_', ' ')} (${percent}%)...`, { id: loadingToast });
+                        }
+                    });
+                }
             }
-        }
-        setPendingFiles(prev => {
-            const updated = { ...prev };
-            keys.forEach(k => delete updated[k]);
-            return updated;
-        });
 
-        const settingsToSave = keys
-            .filter(k => localSettings[k] !== undefined && !['company_logo', 'company_favicon', 'official_signature', 'hero_video'].includes(k))
-            .map(k => ({ key: k, value: localSettings[k] }));
+            setPendingFiles(prev => {
+                const updated = { ...prev };
+                keys.forEach(k => delete updated[k]);
+                return updated;
+            });
 
-        if (settingsToSave.length > 0) {
-            await updateMutation.mutateAsync(settingsToSave);
+            const settingsToSave = keys
+                .filter(k => localSettings[k] !== undefined && !['company_logo', 'company_favicon', 'official_signature', 'hero_video'].includes(k))
+                .map(k => ({ key: k, value: localSettings[k] }));
+
+            if (settingsToSave.length > 0) {
+                hasChanges = true;
+                toast.loading('Saving platform settings...', { id: loadingToast });
+                await updateMutation.mutateAsync(settingsToSave);
+            }
+
+            toast.dismiss(loadingToast);
+            if (hasFiles || hasChanges) {
+                toast.success('Settings and files saved successfully!');
+            } else {
+                toast('No changes were detected to save.', { icon: 'ℹ️' });
+            }
+        } catch (error: any) {
+            toast.dismiss(loadingToast);
+            console.error('Failed to save settings:', error);
+            const errMsg = error?.response?.data?.message || error?.message || 'An error occurred during save. Please try again.';
+            toast.error(errMsg, { duration: 5000 });
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -223,8 +263,13 @@ export default function SuperAdminPortalSettings() {
                             <FileUploadField settingKey="official_signature" label="Official Master Signature" accept="image/*" file={pendingFiles.official_signature} url={localSettings.official_signature} onSelect={(k, f) => setPendingFiles(p => ({...p, [k]: f}))} />
                         </div>
                         <div className="flex justify-end pt-6 border-t border-slate-100">
-                            <button onClick={() => saveSection(['company_name', 'company_affiliated_with', 'company_email', 'company_phone', 'company_address', 'company_logo', 'company_favicon', 'official_signature'])} className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700">
-                                <Save className="w-4 h-4" /> Save Identity
+                            <button 
+                                onClick={() => saveSection(['company_name', 'company_affiliated_with', 'company_email', 'company_phone', 'company_address', 'company_logo', 'company_favicon', 'official_signature'])} 
+                                disabled={isSaving}
+                                className={`flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                {isSaving ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                Save Identity
                             </button>
                         </div>
                     </div>
@@ -448,16 +493,21 @@ export default function SuperAdminPortalSettings() {
                         </div>
 
                         <div className="flex justify-end pt-6 border-t border-slate-100">
-                            <button onClick={() => saveSection([
-                                'hero_video', 'hero_headline', 'hero_subheadline', 'eligibility_headline', 'eligibility_subheadline',
-                                'calculator_headline', 'calculator_subheadline', 'hero_cta_primary_link', 'hero_cta_secondary_link',
-                                'eligibility_success_title', 'eligibility_error_title', 'eligibility_success_desc', 'eligibility_error_desc',
-                                'nav_home', 'nav_rewards', 'nav_portal_login', 'nav_cta_electricity', 'nav_calculator', 'nav_track_status', 'nav_guide',
-                                'label_how_it_works', 'label_eligibility_checker', 'label_subsidy_calculator', 'label_whatsapp_text',
-                                'hero_stats_json', 'how_it_works_json', 'why_choose_us_json', 'eligibility_questions_json', 'calculator_values_json',
-                                'footer_about_text', 'footer_copyright'
-                            ])} className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700">
-                                <Save className="w-4 h-4" /> Save All Homepage Content
+                            <button 
+                                onClick={() => saveSection([
+                                    'hero_video', 'hero_headline', 'hero_subheadline', 'eligibility_headline', 'eligibility_subheadline',
+                                    'calculator_headline', 'calculator_subheadline', 'hero_cta_primary_link', 'hero_cta_secondary_link',
+                                    'eligibility_success_title', 'eligibility_error_title', 'eligibility_success_desc', 'eligibility_error_desc',
+                                    'nav_home', 'nav_rewards', 'nav_portal_login', 'nav_cta_electricity', 'nav_calculator', 'nav_track_status', 'nav_guide',
+                                    'label_how_it_works', 'label_eligibility_checker', 'label_subsidy_calculator', 'label_whatsapp_text',
+                                    'hero_stats_json', 'how_it_works_json', 'why_choose_us_json', 'eligibility_questions_json', 'calculator_values_json',
+                                    'footer_about_text', 'footer_copyright'
+                                ])} 
+                                disabled={isSaving}
+                                className={`flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                {isSaving ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                Save All Homepage Content
                             </button>
                         </div>
                     </div>
@@ -477,8 +527,13 @@ export default function SuperAdminPortalSettings() {
                             <Field k="icard_inst_4" label="Instruction Line 4" value={localSettings.icard_inst_4 || ''} onChange={handleInput} />
                         </div>
                         <div className="flex justify-end pt-6 border-t border-slate-100">
-                            <button onClick={() => saveSection(['icard_inst_1', 'icard_inst_2', 'icard_inst_3', 'icard_inst_4'])} className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700">
-                                <Save className="w-4 h-4" /> Save Defaults
+                            <button 
+                                onClick={() => saveSection(['icard_inst_1', 'icard_inst_2', 'icard_inst_3', 'icard_inst_4'])} 
+                                disabled={isSaving}
+                                className={`flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                {isSaving ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                Save Defaults
                             </button>
                         </div>
                     </div>
@@ -499,8 +554,13 @@ export default function SuperAdminPortalSettings() {
                             </div>
                         </div>
                         <div className="flex justify-end pt-6 border-t border-slate-100">
-                            <button onClick={() => saveSection(['joining_terms_office_timing', 'joining_terms_working_days', 'joining_terms_probation'])} className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700">
-                                <Save className="w-4 h-4" /> Save Template
+                            <button 
+                                onClick={() => saveSection(['joining_terms_office_timing', 'joining_terms_working_days', 'joining_terms_probation'])} 
+                                disabled={isSaving}
+                                className={`flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                {isSaving ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                Save Template
                             </button>
                         </div>
                     </div>
