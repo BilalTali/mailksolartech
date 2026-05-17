@@ -45,11 +45,35 @@ if (!file_exists(__DIR__.'/../.env') && file_exists(__DIR__.'/../.env.production
     copy(__DIR__.'/../.env.production', __DIR__.'/../.env');
 }
 
+// Ensure critical Laravel directories exist (Hostinger Git deploy wipes them)
+$criticalDirs = [
+    __DIR__.'/../storage/logs',
+    __DIR__.'/../storage/framework/cache',
+    __DIR__.'/../storage/framework/sessions',
+    __DIR__.'/../storage/framework/views',
+    __DIR__.'/../bootstrap/cache'
+];
+foreach ($criticalDirs as $dir) {
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0775, true);
+    }
+}
+
 if (!file_exists(__DIR__.'/../vendor/autoload.php')) {
-    http_response_code(500);
-    echo "<h1>500 Internal Server Error</h1>";
-    echo "<p>Vendor directory missing. Please run 'composer install' or commit the vendor/ directory to Git.</p>";
-    exit;
+    $output = shell_exec('cd ' . __DIR__ . '/../ && composer install --no-dev --optimize-autoloader 2>&1');
+    
+    // Fallback using explicit path if default composer fails
+    if (!file_exists(__DIR__.'/../vendor/autoload.php')) {
+        $output .= "\n" . shell_exec('cd ' . __DIR__ . '/../ && /opt/alt/php83/usr/bin/php /opt/composer/composer.phar install --no-dev --optimize-autoloader 2>&1');
+    }
+    
+    if (!file_exists(__DIR__.'/../vendor/autoload.php')) {
+        http_response_code(500);
+        echo "<h1>500 Internal Server Error</h1>";
+        echo "<p>Vendor directory missing. Auto-recovery failed. Please check Hostinger SSH.</p>";
+        echo "<pre>" . htmlspecialchars($output) . "</pre>";
+        exit;
+    }
 }
 
 // Register the Composer autoloader...
