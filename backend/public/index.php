@@ -5,6 +5,22 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
+// Re-establish persistent storage symlinks if wiped by git clean
+$persistentDir = '/home/u596750690/solar_storage';
+$storageLinks = [
+    __DIR__.'/../storage/app/public' => $persistentDir . '/public',
+    __DIR__.'/../storage/app/private' => $persistentDir . '/private',
+    __DIR__.'/../storage/app/leads' => $persistentDir . '/leads',
+];
+foreach ($storageLinks as $link => $target) {
+    if (!file_exists($target)) {
+        @mkdir($target, 0755, true);
+    }
+    if (!file_exists($link)) {
+        @symlink($target, $link);
+    }
+}
+
 // Custom storage handler for Hostinger symlink bypass
 $uri = $_SERVER['REQUEST_URI'] ?? '';
 if (strpos($uri, '/storage/') !== false) {
