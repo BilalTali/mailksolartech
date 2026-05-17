@@ -12,9 +12,9 @@ class EnsureIsAdmin
     {
         $user = $request->user();
 
-        // Strict check: only 'admin' role (not super_admin — they have their own route group
-        // behind the SuperAdminSecurity PIN gate).
-        if (! $user || ! in_array($user->role, ['admin', 'operator'], true)) {
+        // Strict check: allow 'admin', 'operator', and 'super_admin' roles.
+        // Super admins use these endpoints for global tenant settings.
+        if (! $user || ! in_array($user->role, ['admin', 'operator', 'super_admin'], true)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Admin access required.',
