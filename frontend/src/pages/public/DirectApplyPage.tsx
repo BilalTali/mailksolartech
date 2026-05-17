@@ -11,7 +11,7 @@ export default function DirectApplyPage() {
                         <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center">
                             <Leaf size={18} className="text-white" />
                         </div>
-                        <span className="font-bold text-slate-800 text-lg">Andleeb Surya</span>
+                        <span className="font-bold text-slate-800 text-lg">MalikSolarTech</span>
                     </div>
                 </div>
             </header>
@@ -34,7 +34,7 @@ export default function DirectApplyPage() {
             <footer className="bg-white border-t border-slate-200 py-6 mt-auto">
                 <div className="max-w-4xl mx-auto px-4 text-center">
                     <p className="text-xs text-slate-500">
-                        &copy; {new Date().getFullYear()} Andleeb Surya. All rights reserved. <br/>
+                        &copy; {new Date().getFullYear()} MalikSolarTech. All rights reserved. <br/>
                         An authorized channel partner for PM Surya Ghar Yojana.
                     </p>
                 </div>

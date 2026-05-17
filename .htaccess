@@ -1,4 +1,32 @@
 <IfModule mod_rewrite.c>
-    RewriteEngine On
-    RewriteRule ^(.*)$ backend/public/$1 [L]
+  RewriteEngine On
+  RewriteBase /
+
+  # ─── PHASE 1: Serve real static files from frontend/dist first ───────────────
+  # If the file exists in frontend/dist, serve it directly
+  RewriteCond %{DOCUMENT_ROOT}/frontend/dist%{REQUEST_URI} -f
+  RewriteRule ^(.*)$ frontend/dist/$1 [L]
+
+  # If the directory exists in frontend/dist, serve it directly
+  RewriteCond %{DOCUMENT_ROOT}/frontend/dist%{REQUEST_URI} -d
+  RewriteRule ^(.*)$ frontend/dist/$1 [L]
+
+  # ─── PHASE 2: Route Backend API & special paths to Laravel ───────────────────
+  RewriteRule ^api/(.*)$                          backend/public/index.php [L,QSA]
+  RewriteRule ^document-view/(.*)$               backend/public/index.php [L,QSA]
+  RewriteRule ^icard-download/(.*)$              backend/public/index.php [L,QSA]
+  RewriteRule ^icard-download2/(.*)$             backend/public/index.php [L,QSA]
+  RewriteRule ^joining-letter-download/(.*)$     backend/public/index.php [L,QSA]
+  RewriteRule ^verify/(.*)$                      backend/public/index.php [L,QSA]
+  RewriteRule ^storage/(.*)$                     backend/public/index.php [L,QSA]
+
+  # ─── PHASE 3: All other routes → React SPA fallback ─────────────────────────
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^ frontend/dist/index.html [L]
+
 </IfModule>
+
+# ─── MIME types ───────────────────────────────────────────────────────────────
+AddType application/manifest+json .webmanifest
+AddType application/manifest+json .json

@@ -97,7 +97,7 @@ export default function LoginLayout({ children, title, subtitle, role }: LoginLa
 
                 <div className="relative z-10 pt-12 border-t border-white/10">
                     <p className="text-white/40 text-sm font-medium">
-                        © {new Date().getFullYear()} Andleeb Cluster of Services. All rights reserved.
+                        © {new Date().getFullYear()} MalikSolarTech. All rights reserved.
                     </p>
                 </div>
 

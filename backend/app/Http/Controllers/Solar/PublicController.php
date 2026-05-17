@@ -16,7 +16,7 @@ class PublicController extends Controller
     public function settings()
     {
         $keys = [
-            'company_name', 'company_email', 'company_mobile', 'company_whatsapp',
+            'company_name', 'company_email', 'company_phone', 'company_mobile', 'company_whatsapp',
             'company_address', 'company_slogan', 'company_logo', 'company_favicon',
             'company_logo_2', 'company_signature', 'company_seal', 'company_website',
             'company_registration_no',

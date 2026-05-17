@@ -7,7 +7,7 @@ import AdminAbsorptionsPage from '@/pages/admin/AdminAbsorptionsPage';
 import SuperAdminFAQPage from './SuperAdminFAQPage';
 import AdminReportsPage from '@/pages/admin/AdminReportsPage';
 import SuperAdminCrmOptionsPage from './SuperAdminCrmOptionsPage';
-import AdminSettingsPage from '@/pages/admin/AdminSettingsPage';
+import SuperAdminPortalSettings from './SuperAdminPortalSettings';
 import { AchievementManager } from '@/components/admin/AchievementManager';
 import { FeedbackManager } from '@/components/admin/FeedbackManager';
 import { ConsumerRatingManager } from '@/components/admin/ConsumerRatingManager';
@@ -59,7 +59,7 @@ export default function SuperAdminGlobalSettingsPage() {
             case 'achievements': return <div className="bg-white p-8 rounded-[3rem] border border-slate-200"><AchievementManager /></div>;
             case 'feedback': return <div className="bg-white p-8 rounded-[3rem] border border-slate-200"><FeedbackManager /></div>;
             case 'consumer_governance': return <div className="bg-white p-8 rounded-[3rem] border border-slate-200"><ConsumerRatingManager /></div>;
-            case 'homepage': return <AdminSettingsPage />; // Reusing settings page for branding/portal
+            case 'homepage': return <SuperAdminPortalSettings />;
             default: return null;
         }
     };

@@ -12,8 +12,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       manifest: {
-        name: 'Andleeb Surya — PM Surya Ghar',
-        short_name: 'AndleebSurya',
+        name: 'MalikSolarTech — PM Surya Ghar',
+        short_name: 'MalikSolarTech',
         description: 'Official Help Desk for PM Surya Ghar Muft Bijli Yojana — J&K and Ladakh',
         theme_color: '#edca98',
         background_color: '#ffffff',

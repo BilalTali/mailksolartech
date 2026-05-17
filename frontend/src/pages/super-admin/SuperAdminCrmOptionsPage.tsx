@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { crmOptionsApi, type CrmOption } from '@/services/crmOptions.api';
+import SecurityGuard from '@/components/super-admin/SecurityGuard';
 
 const CATEGORIES = [
     { value: 'system_capacity', label: 'System Capacity (kW)' },
@@ -100,8 +101,9 @@ export default function SuperAdminCrmOptionsPage() {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <SecurityGuard>
+            <div className="space-y-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                         <Settings className="text-orange-500" /> CRM Options Manager
@@ -324,7 +326,8 @@ export default function SuperAdminCrmOptionsPage() {
                     </div>
                 </div>
             )}
-        </div>
+            </div>
+        </SecurityGuard>
     );
 }
 

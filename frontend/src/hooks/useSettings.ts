@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { publicApi, type PublicSettingsData } from '@/services/public.api';
 
 export const DEFAULT_SETTINGS: PublicSettingsData = {
-    company_name: import.meta.env.VITE_APP_NAME || 'AndleebSurya',
+    company_name: import.meta.env.VITE_APP_NAME || 'MalikSolarTech',
     company_email: null,
     company_mobile: null,
     company_whatsapp: null,
@@ -104,7 +104,7 @@ export function useSettings() {
     return {
         settings,
         isLoading,
-        companyName: settings.company_name || 'SuryaMitra',
+        companyName: settings.company_name || 'MalikSolarTech',
         affiliatedWith: settings.company_affiliated_with,
         companyEmail: settings.company_email,
         companyMobile: settings.company_mobile,
