@@ -22,7 +22,7 @@ export default function SchemeInfoPage() {
         queryFn: publicApi.getSettings,
     });
 
-    const companyName = settings?.company_name || 'AndleebSurya';
+    const companyName = settings?.company_name || 'MalikSolarTech';
 
     const steps = [
         { step: '01', title: 'Submit Your Query', desc: 'Fill the form on our website with your name, mobile, and district. Zero cost, takes 2 minutes.' },

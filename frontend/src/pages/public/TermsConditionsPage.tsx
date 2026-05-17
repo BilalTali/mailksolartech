@@ -15,8 +15,8 @@ export default function TermsConditionsPage() {
         queryFn: publicApi.getSettings,
     });
 
-    const companyName = getSetting(settings, 'company_name', 'AndleebSurya');
-    const companyEmail = getSetting(settings, 'company_email', 'support@andleebsurya.in');
+    const companyName = getSetting(settings, 'company_name', 'MalikSolarTech');
+    const companyEmail = getSetting(settings, 'company_email', 'support@MalikSolarTech.in');
 
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 selection:bg-orange-100 selection:text-orange-900">

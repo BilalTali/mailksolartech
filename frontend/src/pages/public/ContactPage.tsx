@@ -11,10 +11,10 @@ export default function ContactPage() {
         queryFn: publicApi.getSettings,
     });
 
-    const companyEmail = settings?.company_email || 'support@andleebsurya.in';
+    const companyEmail = settings?.company_email || 'support@MalikSolarTech.in';
     const companyMobile = settings?.company_mobile || '+91-XXXXXXXXXX';
     const companyAddress = settings?.company_address || 'Registered Office';
-    const companyName = settings?.company_name || 'AndleebSurya';
+    const companyName = settings?.company_name || 'MalikSolarTech';
 
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 selection:bg-orange-100 selection:text-orange-900">

@@ -59,7 +59,7 @@ export default function FaqPage() {
         queryFn: publicApi.getSettings,
     });
 
-    const companyName = settings?.company_name || 'AndleebSurya';
+    const companyName = settings?.company_name || 'MalikSolarTech';
 
     const agencyFaqs = [
         {

@@ -13,8 +13,8 @@ export default function Footer() {
         queryFn: publicApi.getSettings,
     });
 
-    const companyName = getSetting(settings, 'company_name', 'AndleebSurya');
-    const email = getSetting(settings, 'company_email', 'info@andleebsurya.in');
+    const companyName = getSetting(settings, 'company_name', 'MalikSolarTech');
+    const email = getSetting(settings, 'company_email', 'info@MalikSolarTech.in');
     const phone = getSetting(settings, 'company_phone', getSetting(settings, 'company_mobile', '+91 88990 55335'));
     const address = getSetting(settings, 'company_address', 'Srinagar, Jammu & Kashmir');
 

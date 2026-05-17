@@ -28,7 +28,7 @@ export default function MediaPage() {
         <div className="min-h-screen bg-white">
             <SEOHead
                 title="Reward Winners & Announcements - PM Surya Ghar"
-                description={`Celebrating the milestones and achievements of our dedicated ${settings?.company_name || 'AndleebSurya'} partners across India.`}
+                description={`Celebrating the milestones and achievements of our dedicated ${settings?.company_name || 'MalikSolarTech'} partners across India.`}
                 breadcrumbs={[
                     { name: 'Home', url: window.location.origin },
                     { name: 'Media', url: window.location.origin + '/media' }

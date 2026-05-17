@@ -41,7 +41,7 @@ export default function Navbar() {
                                 </div>
                             )}
                             <span className="font-display font-bold text-xl text-primary">
-                                {settings?.company_name || 'AndleebSurya'}
+                                {settings?.company_name || 'MalikSolarTech'}
                             </span>
                         </Link>
                         <div className="hidden lg:block">

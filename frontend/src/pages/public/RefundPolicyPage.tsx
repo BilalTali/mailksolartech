@@ -13,8 +13,8 @@ export default function RefundPolicyPage() {
         queryFn: publicApi.getSettings,
     });
 
-    const companyName = getSetting(settings, 'company_name', 'AndleebSurya');
-    const companyEmail = getSetting(settings, 'company_email', 'support@andleebsurya.in');
+    const companyName = getSetting(settings, 'company_name', 'MalikSolarTech');
+    const companyEmail = getSetting(settings, 'company_email', 'support@MalikSolarTech.in');
     const companyMobile = getSetting(settings, 'company_mobile', '+91-XXXXXXXXXX');
 
     return (

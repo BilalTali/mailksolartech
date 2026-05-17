@@ -177,7 +177,7 @@ export default function HomePage() {
                         "@context": "https://schema.org",
                         "@type": "WebSite",
                         "url": window.location.origin,
-                        "name": getSetting(settings, 'company_name', 'AndleebSurya'),
+                        "name": getSetting(settings, 'company_name', 'MalikSolarTech'),
                         "description": "Official portal facilitator for PM Surya Ghar Muft Bijli Yojana details and subsidies."
                     }
                 ]}

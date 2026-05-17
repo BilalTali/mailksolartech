@@ -44,7 +44,7 @@ const SEOHead: React.FC<SEOHeadProps> = ({
     });
 
     const faviconUrl = getFileUrl(settings?.company_favicon, '/favicon.svg');
-    const companyName = settings?.company_name || 'AndleebSurya';
+    const companyName = settings?.company_name || 'MalikSolarTech';
     const siteTitle = title.includes(companyName) ? title : `${title} | ${companyName}`;
     const canonicalUrl = window.location.origin + location.pathname;
     const logoUrl = getFileUrl(settings?.company_logo, `${window.location.origin}/logo.webp`);

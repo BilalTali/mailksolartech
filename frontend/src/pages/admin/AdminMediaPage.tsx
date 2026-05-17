@@ -170,7 +170,7 @@ const AdminMediaPage: React.FC = () => {
                         <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
                             <div>
                                 <p className="text-xs font-bold text-slate-700">Show on Public Page</p>
-                                <p className="text-[10px] text-slate-400 mt-0.5">Visible at andleebsurya.in/media</p>
+                                <p className="text-[10px] text-slate-400 mt-0.5">Visible at MalikSolarTech.in/media</p>
                             </div>
                             <button
                                 type="button"

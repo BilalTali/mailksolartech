@@ -19,7 +19,7 @@ export default function UserManualPage() {
         queryFn: publicApi.getSettings,
     });
 
-    const companyName = getSetting(settings, 'company_name', 'AndleebSurya');
+    const companyName = getSetting(settings, 'company_name', 'MalikSolarTech');
 
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 selection:bg-orange-100 selection:text-orange-900">
@@ -167,7 +167,7 @@ export default function UserManualPage() {
                                             <ShieldAlert size={28} className="text-amber-400" /> Verify Your Agent
                                         </h4>
                                         <p className="text-slate-300 text-lg leading-relaxed font-medium m-0 max-w-2xl relative z-10">
-                                            Demand to scan the QR code printed on the agent's ID Card. The code must resolve directly to a live verification page hosted strictly on <code className="bg-black/30 px-2 py-1 rounded-md text-sky-300">andleebsurya.in/verify</code>.
+                                            Demand to scan the QR code printed on the agent's ID Card. The code must resolve directly to a live verification page hosted strictly on <code className="bg-black/30 px-2 py-1 rounded-md text-sky-300">MalikSolarTech.in/verify</code>.
                                         </p>
                                     </div>
                                 </section>

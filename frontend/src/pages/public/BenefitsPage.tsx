@@ -21,7 +21,7 @@ export default function BenefitsPage() {
         queryFn: publicApi.getSettings,
     });
 
-    const companyName = settings?.company_name || 'AndleebSurya';
+    const companyName = settings?.company_name || 'MalikSolarTech';
 
     const benefits = [
         {
