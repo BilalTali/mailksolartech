@@ -1,0 +1,27 @@
+name: Hostinger Post-Deploy Automation
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  run-composer:
+    name: Install Dependencies on Live Server
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Hostinger Webhook Sync
+        run: sleep 15 # Gives Hostinger 15 seconds to finish pulling the latest files
+
+      - name: Rebuild Backend via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 82.25.107.68
+          username: u596750690
+          password: ${{ secrets.HOSTINGER_PASSWORD }}
+          port: 65002
+          script: |
+            cd domains/maliksolartech.com/public_html/backend
+            composer install --no-dev --optimize-autoloader
+            php artisan optimize:clear
+            php artisan migrate --force
