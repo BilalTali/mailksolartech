@@ -28,7 +28,8 @@ jobs:
             echo "--- 1. Engaging Maintenance Mode ---"
             php artisan down --render="errors::503" --secret="malik-deploy-bypass" || true
 
-            echo "--- 2. Installing Composer Dependencies ---"
+            echo "--- 2. Delete stale vendor and reinstall cleanly ---"
+            rm -rf vendor
             composer install --no-dev --optimize-autoloader
 
             echo "--- 3. Running Database Migrations ---"
@@ -45,11 +46,16 @@ jobs:
             echo "--- 5. Rebuilding Application Caches ---"
             php artisan optimize:clear
             php artisan config:cache
+            php artisan route:cache
+            php artisan config:cache
             php artisan event:cache
             php artisan view:cache
 
-            echo "--- 6. Verifying & Establishing Storage Symlink ---"
-            php artisan storage:link
+            echo "--- 6. Establishing Storage Symlink & Creating Required Dirs ---"
+            # Use ln directly since exec() is disabled on Hostinger shared hosting
+            ln -sfn ../storage/app/public public/storage || true
+            # Ensure critical directories exist (Hostinger git pull sometimes wipes them)
+            mkdir -p storage/logs storage/framework/cache/data storage/framework/sessions storage/framework/views bootstrap/cache
 
             echo "--- 7. Enforcing Correct Web Daemon Permissions ---"
             chmod -R 775 storage bootstrap/cache || true
