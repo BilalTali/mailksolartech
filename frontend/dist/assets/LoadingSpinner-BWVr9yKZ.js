@@ -1,0 +1,1 @@
+import{j as e}from"./vendor-utils-DGLhIx3J.js";function t({text:r="Loading..."}){return e.jsxs("div",{className:"flex flex-col items-center justify-center gap-3 py-20",children:[e.jsx("div",{className:"w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin"}),e.jsx("p",{className:"text-neutral-600 text-sm",children:r})]})}export{t as L};

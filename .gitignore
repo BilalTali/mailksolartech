@@ -54,7 +54,7 @@ auth.json
 # ==========================================
 # Build / Distribution Artifacts
 # ==========================================
-dist/
+# dist/
 dist.tar.gz
 dist-ssr/
 stats.html
