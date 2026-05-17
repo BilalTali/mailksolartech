@@ -31,7 +31,10 @@ class SuperAgentLeadController extends Controller
         $query = Lead::query()->visibleToSuperAgent($superAgent->id)
             ->with([
                 'assignedAgent', 'submittedByAgent', 'assignedSuperAgent',
-                'documents',
+                'documents' => function ($q) use ($superAgent) {
+                    $q->where('visible_to_downline', true)
+                      ->orWhere('uploaded_by', $superAgent->id);
+                },
                 'commissions'
             ]);
 
@@ -151,7 +154,10 @@ class SuperAgentLeadController extends Controller
         $superAgent = $request->user();
         $lead = Lead::query()->where(fn ($q) => $q->where('ulid', $ulid))->with([
             'assignedAgent', 'submittedByAgent', 'assignedSuperAgent',
-            'documents',
+            'documents' => function ($q) use ($superAgent) {
+                $q->where('visible_to_downline', true)
+                  ->orWhere('uploaded_by', $superAgent->id);
+            },
             'statusLogs.changedBy', 'commissions',
             'verifications.performedBy',
         ])->firstOrFail();

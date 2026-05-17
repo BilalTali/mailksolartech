@@ -15,11 +15,16 @@ use Illuminate\Support\Str;
 class AgentLeadController extends Controller
 {
     public function __construct(private LeadService $leadService) {}
+
     public function index(Request $request)
     {
         $user = $request->user();
         $query = Lead::visibleToAgent($user->id)->with([
-            'documents',
+            'documents' => function ($q) use ($user) {
+                // Agent sees: documents they uploaded OR documents marked visible_to_downline
+                $q->where('visible_to_downline', true)
+                  ->orWhere('uploaded_by', $user->id);
+            },
             'commissions'
         ]);
 
@@ -59,7 +64,10 @@ class AgentLeadController extends Controller
         $lead = Lead::query()->visibleToAgent($user->id)
             ->with([
                 'statusLogs.changedBy',
-                'documents',
+                'documents' => function ($q) use ($user) {
+                    $q->where('visible_to_downline', true)
+                      ->orWhere('uploaded_by', $user->id);
+                },
                 'commissions',
                 'verifications.performedBy'
             ])
