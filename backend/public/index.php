@@ -16,6 +16,15 @@ foreach ($storageLinks as $link => $target) {
     if (!file_exists($target)) {
         @mkdir($target, 0755, true);
     }
+    
+    // If the path is a physical directory instead of a symlink, delete/rename it
+    if (file_exists($link) && !is_link($link)) {
+        @rmdir($link);
+        if (file_exists($link)) {
+            @rename($link, $link . '_backup_' . time());
+        }
+    }
+    
     if (!file_exists($link)) {
         @symlink($target, $link);
     }
