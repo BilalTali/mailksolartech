@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Settings as SettingsIcon, Globe, Save, RefreshCcw, Layout, Image as ImageIcon } from 'lucide-react';
+import { Settings as SettingsIcon, Globe, Save, RefreshCcw, Layout, Image as ImageIcon, Trash2, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { settingsApi } from '@/services/settings.api';
 import api from '@/services/axios';
@@ -70,11 +70,40 @@ const FileUploadField = ({ settingKey, label, accept, file, url, onSelect }: { s
 };
 
 
+interface QuestionItem {
+    id: string;
+    text: string;
+    expected: 'yes' | 'no';
+}
+
 export default function SuperAdminPortalSettings() {
     const queryClient = useQueryClient();
     const [activeTab, setActiveTab] = useState<TabId>('identity');
     const [localSettings, setLocalSettings] = useState<Record<string, string>>({});
     const [pendingFiles, setPendingFiles] = useState<Record<string, File>>({});
+
+    const getQuestions = (): QuestionItem[] => {
+        try {
+            const json = localSettings.eligibility_questions_json;
+            if (json) {
+                const parsed = JSON.parse(json);
+                if (Array.isArray(parsed)) return parsed;
+            }
+        } catch (e) {}
+        return [
+            { id: 'q1', text: 'Do you own the house where solar panels will be installed?', expected: 'yes' },
+            { id: 'q2', text: 'Do you have an active electricity connection in your name?', expected: 'yes' },
+            { id: 'q3', text: 'Do you have a valid Aadhaar-linked bank account?', expected: 'yes' },
+            { id: 'q4', text: 'Have you NOT availed any solar subsidy before?', expected: 'yes' },
+        ];
+    };
+
+    const updateQuestions = (questions: QuestionItem[]) => {
+        setLocalSettings(prev => ({
+            ...prev,
+            eligibility_questions_json: JSON.stringify(questions, null, 2)
+        }));
+    };
 
     const { data: settingsData, isLoading } = useQuery({
         queryKey: ['admin-settings'],
@@ -238,6 +267,92 @@ export default function SuperAdminPortalSettings() {
                                 <div className="md:col-span-1">
                                     <Field k="eligibility_error_desc" label="Error Description" type="textarea" value={localSettings.eligibility_error_desc || ''} onChange={handleInput} />
                                 </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 className="font-black text-slate-800 mb-4 border-b border-slate-100 pb-2">Eligibility Checklist Questions</h3>
+                            <div className="space-y-4 mb-6">
+                                {getQuestions().map((q, index) => (
+                                    <div key={q.id} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 p-4 bg-slate-50/50 hover:bg-slate-50 border border-slate-200/60 rounded-2xl transition-all duration-300">
+                                        <div className="flex items-center gap-3 shrink-0">
+                                            <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-indigo-50 font-black text-indigo-600 text-xs shadow-sm">
+                                                Q{index + 1}
+                                            </span>
+                                        </div>
+                                        
+                                        <div className="flex-1 min-w-0">
+                                            <input
+                                                type="text"
+                                                value={q.text}
+                                                onChange={(e) => {
+                                                    const updated = getQuestions().map(item => item.id === q.id ? { ...item, text: e.target.value } : item);
+                                                    updateQuestions(updated);
+                                                }}
+                                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-accent/20 focus:border-accent bg-white text-sm"
+                                                placeholder="Enter the qualification question text..."
+                                            />
+                                        </div>
+
+                                        <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden sm:block font-sans">Expected Answer</span>
+                                            <div className="flex bg-slate-200/60 p-1 rounded-xl">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const updated = getQuestions().map(item => item.id === q.id ? { ...item, expected: 'yes' as const } : item);
+                                                        updateQuestions(updated);
+                                                    }}
+                                                    className={`px-3 py-1.5 rounded-lg text-xs font-black tracking-widest transition-all ${
+                                                        q.expected === 'yes'
+                                                            ? 'bg-emerald-500 text-white shadow-sm'
+                                                            : 'text-slate-500 hover:text-slate-800'
+                                                    }`}
+                                                >
+                                                    YES
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const updated = getQuestions().map(item => item.id === q.id ? { ...item, expected: 'no' as const } : item);
+                                                        updateQuestions(updated);
+                                                    }}
+                                                    className={`px-3 py-1.5 rounded-lg text-xs font-black tracking-widest transition-all ${
+                                                        q.expected === 'no'
+                                                            ? 'bg-rose-500 text-white shadow-sm'
+                                                            : 'text-slate-500 hover:text-slate-800'
+                                                    }`}
+                                                >
+                                                    NO
+                                                </button>
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const updated = getQuestions().filter(item => item.id !== q.id);
+                                                    updateQuestions(updated);
+                                                }}
+                                                className="p-2.5 text-rose-500 hover:bg-rose-50 rounded-xl transition-all border border-transparent hover:border-rose-100 hover:scale-105 active:scale-95 shrink-0"
+                                                title="Delete Question"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const nextId = `q${Date.now()}`;
+                                        const updated = [...getQuestions(), { id: nextId, text: '', expected: 'yes' as const }];
+                                        updateQuestions(updated);
+                                    }}
+                                    className="flex items-center justify-center gap-2 w-full py-3.5 border-2 border-dashed border-slate-200 hover:border-indigo-500/50 hover:bg-indigo-50/20 rounded-2xl text-xs font-black uppercase tracking-wider text-slate-500 hover:text-indigo-600 transition-all duration-300 group active:scale-[0.99]"
+                                >
+                                    <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" /> Add Custom Question
+                                </button>
                             </div>
                         </div>
 
