@@ -124,26 +124,40 @@ class Setting extends Model
     /**
      * Get all merged settings (Global + User override) for a specific user ID.
      * Transformation of media URLs is handled automatically.
+     *
+     * Falls back to a simple key-only query if the user_id column is absent
+     * on legacy production databases (prevents 500 on public/settings).
      */
     public static function getMergedSettings($userId = null)
     {
-        // 1. Fetch Global Settings
-        $globalSettings = static::query()
-            ->whereNull('user_id')
-            ->get();
-
-        // 2. Fetch User-specific Settings
-        $userSettings = collect();
-        if ($userId) {
-            $userSettings = static::query()
-                ->where('user_id', $userId)
+        try {
+            // 1. Fetch Global Settings
+            $globalSettings = static::query()
+                ->whereNull('user_id')
                 ->get();
-        }
 
-        // 3. Merge: User settings override global settings
-        $merged = $globalSettings->keyBy('key')->merge(
-            $userSettings->keyBy('key')
-        )->values();
+            // 2. Fetch User-specific Settings
+            $userSettings = collect();
+            if ($userId) {
+                $userSettings = static::query()
+                    ->where('user_id', $userId)
+                    ->get();
+            }
+
+            // 3. Merge: User settings override global settings
+            $merged = $globalSettings->keyBy('key')->merge(
+                $userSettings->keyBy('key')
+            )->values();
+
+        } catch (\Throwable $e) {
+            // Fallback: user_id column may not exist on legacy production DB.
+            // Return all settings without user scoping. Guard migration will fix this.
+            \Illuminate\Support\Facades\Log::warning(
+                'Setting::getMergedSettings() fell back to global-only query. ' .
+                'Run migrations to add user_id column. Error: ' . $e->getMessage()
+            );
+            $merged = static::query()->get();
+        }
 
         // 4. Transform media URLs
         $merged->transform(function ($setting) {

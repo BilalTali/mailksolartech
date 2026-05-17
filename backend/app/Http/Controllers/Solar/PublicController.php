@@ -33,22 +33,36 @@ class PublicController extends Controller
             'nav_home', 'nav_rewards', 'nav_calculator', 'nav_track_status', 'nav_guide', 'nav_portal_login', 'nav_cta_electricity'
         ];
 
-        // Determine context: Authenticated user's root admin or Global (null)
-        /** @var \App\Models\User|null $user */
-        $user = auth('sanctum')->user();
-        $userId = $user ? $user->getRootAdminId() : null;
+        try {
+            // Determine context: Authenticated user's root admin or Global (null)
+            /** @var \App\Models\User|null $user */
+            $user = auth('sanctum')->user();
+            $userId = $user ? $user->getRootAdminId() : null;
 
-        // Use the model's helper to get merged (Specific > Global) settings
-        $mergedSettings = Setting::getMergedSettings($userId)
-            ->whereIn('key', $keys);
+            // Use the model's helper to get merged (Specific > Global) settings
+            $mergedSettings = Setting::getMergedSettings($userId)
+                ->whereIn('key', $keys);
 
-        $result = [];
-        foreach ($keys as $key) {
-            $setting = $mergedSettings->firstWhere('key', $key);
-            $result[$key] = $setting ? (string) $setting->value : null;
+            $result = [];
+            foreach ($keys as $key) {
+                $setting = $mergedSettings->firstWhere('key', $key);
+                $result[$key] = $setting ? (string) $setting->value : null;
+            }
+
+            return response()->json(['success' => true, 'data' => $result]);
+
+        } catch (\Throwable $e) {
+            Log::error('PublicController::settings() failed: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            // Return empty settings so the frontend can still render without crashing.
+            return response()->json([
+                'success' => true,
+                'data'    => array_fill_keys($keys, null),
+            ]);
         }
-
-        return response()->json(['success' => true, 'data' => $result]);
     }
 
     /**
