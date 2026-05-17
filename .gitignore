@@ -94,17 +94,11 @@ backend/storage/logs/*
 backend/bootstrap/cache/*
 !backend/bootstrap/cache/.gitignore
 
-# Protect Hostinger uploads from git clean
-backend/storage/app/public/*
-!backend/storage/app/public/.gitignore
-!backend/storage/app/public/branding/.gitignore
-!backend/storage/app/public/homepage/.gitignore
-
-# Protect secure lead documents and private storage from git clean
-backend/storage/app/leads/*
-!backend/storage/app/leads/.gitignore
-backend/storage/app/private/*
-!backend/storage/app/private/.gitignore
+# Protect Hostinger uploads from git clean (100% ignored to prevent git clean deletion)
+backend/storage/app/public/branding/
+backend/storage/app/public/homepage/
+backend/storage/app/leads/
+backend/storage/app/private/
 
 Homestead.json
 Homestead.yaml

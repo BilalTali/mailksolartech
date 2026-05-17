@@ -87,7 +87,11 @@ $criticalDirs = [
     __DIR__.'/../storage/framework/cache',
     __DIR__.'/../storage/framework/sessions',
     __DIR__.'/../storage/framework/views',
-    __DIR__.'/../bootstrap/cache'
+    __DIR__.'/../bootstrap/cache',
+    __DIR__.'/../storage/app/public/branding',
+    __DIR__.'/../storage/app/public/homepage',
+    __DIR__.'/../storage/app/leads',
+    __DIR__.'/../storage/app/private'
 ];
 foreach ($criticalDirs as $dir) {
     if (!is_dir($dir)) {

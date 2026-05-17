@@ -20,11 +20,7 @@ class AgentLeadController extends Controller
     {
         $user = $request->user();
         $query = Lead::visibleToAgent($user->id)->with([
-            'documents' => function ($q) use ($user) {
-                // Agent sees: documents they uploaded OR documents marked visible_to_downline
-                $q->where('visible_to_downline', true)
-                  ->orWhere('uploaded_by', $user->id);
-            },
+            'documents',
             'commissions'
         ]);
 
@@ -64,10 +60,7 @@ class AgentLeadController extends Controller
         $lead = Lead::query()->visibleToAgent($user->id)
             ->with([
                 'statusLogs.changedBy',
-                'documents' => function ($q) use ($user) {
-                    $q->where('visible_to_downline', true)
-                      ->orWhere('uploaded_by', $user->id);
-                },
+                'documents',
                 'commissions',
                 'verifications.performedBy'
             ])
