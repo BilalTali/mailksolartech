@@ -197,7 +197,7 @@ class SettingController extends Controller
     {
         $request->validate([
             'key' => 'required|string|in:company_favicon,company_logo,company_logo_2,company_signature,official_signature,company_seal,hero_video',
-            'file' => 'required|file|max:102400', // 100MB max
+            'file' => 'required|file|mimes:jpeg,jpg,png,webp,svg,pdf,mp4,webm|max:102400', // 100MB max
         ]);
 
         $key = $request->input('key');
