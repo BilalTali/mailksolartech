@@ -48,7 +48,8 @@ temp_*
 node_modules/
 .pnp
 .pnp.js
-# vendor/
+vendor/
+backend/vendor/
 auth.json
 
 # ==========================================
