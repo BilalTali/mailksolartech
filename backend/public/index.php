@@ -60,17 +60,22 @@ foreach ($criticalDirs as $dir) {
 }
 
 if (!file_exists(__DIR__.'/../vendor/autoload.php')) {
-    $output = shell_exec('cd ' . __DIR__ . '/../ && composer install --no-dev --optimize-autoloader 2>&1');
-    
-    // Fallback using explicit path if default composer fails
-    if (!file_exists(__DIR__.'/../vendor/autoload.php')) {
-        $output .= "\n" . shell_exec('cd ' . __DIR__ . '/../ && /opt/alt/php83/usr/bin/php /opt/composer/composer.phar install --no-dev --optimize-autoloader 2>&1');
+    $output = '';
+    if (function_exists('shell_exec')) {
+        $output = shell_exec('cd ' . __DIR__ . '/../ && composer install --no-dev --optimize-autoloader 2>&1');
+        
+        // Fallback using explicit path if default composer fails
+        if (!file_exists(__DIR__.'/../vendor/autoload.php')) {
+            $output .= "\n" . shell_exec('cd ' . __DIR__ . '/../ && /opt/alt/php83/usr/bin/php /opt/composer/composer.phar install --no-dev --optimize-autoloader 2>&1');
+        }
+    } else {
+        $output = 'shell_exec is disabled on this server. Cannot auto-install dependencies.';
     }
     
     if (!file_exists(__DIR__.'/../vendor/autoload.php')) {
         http_response_code(500);
         echo "<h1>500 Internal Server Error</h1>";
-        echo "<p>Vendor directory missing. Auto-recovery failed. Please check Hostinger SSH.</p>";
+        echo "<p>Vendor directory missing. Auto-recovery failed. Please check Hostinger SSH or ensure your GitHub Action HOSTINGER_PASSWORD secret is configured.</p>";
         echo "<pre>" . htmlspecialchars($output) . "</pre>";
         exit;
     }
