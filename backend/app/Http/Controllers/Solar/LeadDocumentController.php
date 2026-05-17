@@ -161,7 +161,7 @@ class LeadDocumentController extends Controller
         $this->authorizeDocument($request->user(), $lead);
 
         $url = URL::temporarySignedRoute(
-            'leads.documents.signed-view',
+            'api.v1.leads.documents.signed-view',
             now()->addMinutes(120),
             ['ulid' => $ulid, 'id' => $id]
         );
