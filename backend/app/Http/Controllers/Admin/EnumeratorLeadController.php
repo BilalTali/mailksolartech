@@ -13,12 +13,7 @@ class EnumeratorLeadController extends Controller
     {
         $enumeratorId = $request->user()->id;
         $query = \App\Models\Lead::query()->where(fn ($q) => $q->where('submitted_by_enumerator_id', $enumeratorId))
-            ->with([
-                'documents' => function ($q) use ($enumeratorId) {
-                    $q->where('visible_to_downline', true)
-                      ->orWhere('uploaded_by', $enumeratorId);
-                }
-            ]);
+            ->with(['documents']);
 
         // Check common filters just like agent
         if ($request->has('status')) {
@@ -35,9 +30,16 @@ class EnumeratorLeadController extends Controller
 
         $leads = $query->orderBy('created_at', 'desc')->paginate($request->input('per_page', 15));
 
+        // Count reverted leads for banner
+        $revertedCount = \App\Models\Lead::query()
+            ->where('submitted_by_enumerator_id', $enumeratorId)
+            ->where('verification_status', 'reverted_to_enumerator')
+            ->count();
+
         return response()->json([
             'success' => true,
             'data' => $leads,
+            'meta' => ['reverted_count' => $revertedCount],
         ]);
     }
 
@@ -71,10 +73,7 @@ class EnumeratorLeadController extends Controller
             ->where(fn ($q) => $q->where('submitted_by_enumerator_id', $enumeratorId))
             ->with([
                 'statusLogs.changedBy',
-                'documents' => function ($q) use ($enumeratorId) {
-                    $q->where('visible_to_downline', true)
-                      ->orWhere('uploaded_by', $enumeratorId);
-                }
+                'documents'
             ])
             ->where(fn ($q) => $q->where('ulid', $ulid))
             ->firstOrFail();
@@ -109,5 +108,29 @@ class EnumeratorLeadController extends Controller
             'message' => 'Document uploaded successfully',
             'data' => $document,
         ], 201);
+    }
+
+    /** Enumerator corrects and resubmits a reverted lead */
+    public function resubmit(\App\Http\Requests\StoreAgentLeadRequest $request, $ulid)
+    {
+        $enumeratorId = $request->user()->id;
+        $lead = \App\Models\Lead::query()
+            ->where(fn ($q) => $q->where('submitted_by_enumerator_id', $enumeratorId))
+            ->where(fn ($q) => $q->where('ulid', $ulid))
+            ->firstOrFail();
+
+        $correctedData = $request->validated();
+
+        try {
+            $lead = $this->leadService->resubmitLeadByEnumerator($lead, $correctedData, $request->user());
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lead corrected and resubmitted successfully!',
+            'data' => $lead,
+        ]);
     }
 }

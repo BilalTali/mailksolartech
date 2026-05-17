@@ -20,7 +20,7 @@ class EnumeratorDashboardController extends Controller
         $pendingLeads = \App\Models\Lead::query()->where(fn($q) => $q->where('submitted_by_enumerator_id', $user->id))
             ->where(fn($q) => $q->where('verification_status', 'pending_super_agent_verification'))->count();
         $revertedLeads = \App\Models\Lead::query()->where(fn($q) => $q->where('submitted_by_enumerator_id', $user->id))
-            ->where(fn($q) => $q->where('verification_status', 'reverted_to_agent'))->count();
+            ->where(fn($q) => $q->where('verification_status', 'reverted_to_enumerator'))->count();
 
         // Commission Stats
         $commStats = $user->enumeratorCommissions()

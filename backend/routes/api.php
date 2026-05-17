@@ -209,6 +209,7 @@ $api->as('api.v1.')->group(function () {
             Route::post('/leads', [\App\Http\Controllers\Admin\EnumeratorLeadController::class, 'store']);
             Route::get('/leads/{ulid}', [\App\Http\Controllers\Admin\EnumeratorLeadController::class, 'show']);
             Route::post('/leads/{ulid}/documents', [\App\Http\Controllers\Admin\EnumeratorLeadController::class, 'uploadDocument'])->middleware('throttle:30,1');
+            Route::put('/leads/{ulid}/resubmit', [\App\Http\Controllers\Admin\EnumeratorLeadController::class, 'resubmit']);
             
             Route::get('/commissions', [\App\Http\Controllers\Admin\EnumeratorCommissionController::class, 'index']);
             

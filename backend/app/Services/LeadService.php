@@ -537,6 +537,61 @@ class LeadService
         });
     }
 
+    /**
+     * Enumerator corrects and resubmits a reverted lead.
+     */
+    public function resubmitLeadByEnumerator(Lead $lead, array $correctedData, User $enumerator): Lead
+    {
+        if ($lead->verification_status !== 'reverted_to_enumerator') {
+            throw new \App\Exceptions\InvalidLeadOperationException('Only leads reverted to you can be resubmitted.');
+        }
+
+        if ((int) $lead->submitted_by_enumerator_id !== (int) $enumerator->id) {
+            throw new \App\Exceptions\LeadAccessDeniedException('You can only resubmit your own leads.');
+        }
+
+        return DB::transaction(function () use ($lead, $correctedData, $enumerator) {
+            $allowed = [
+                'beneficiary_name', 'beneficiary_mobile', 'beneficiary_email',
+                'beneficiary_address', 'beneficiary_pincode', 'beneficiary_state',
+                'beneficiary_district', 'consumer_number', 'discom_name',
+                'roof_size', 'system_capacity', 'monthly_bill_amount',
+                'query_message',
+            ];
+
+            $lead->update([
+                ...collect($correctedData)->only($allowed)->toArray(),
+                'verification_status' => 'pending_agent_verification',
+                'revert_reason' => null,
+            ]);
+
+            $this->logStatusChange($lead, $enumerator->id, $lead->status, $lead->status,
+                'Lead corrected and resubmitted by enumerator (revert #'.$lead->revert_count.')');
+
+            if ($lead->assigned_agent_id) {
+                $this->notifyAgentLeadResubmitted($lead, $enumerator);
+            }
+
+            return $lead->fresh();
+        });
+    }
+
+    private function notifyAgentLeadResubmitted(Lead $lead, User $enumerator): void
+    {
+        if (! $lead->assigned_agent_id) {
+            return;
+        }
+        $agent = User::find($lead->assigned_agent_id);
+        if ($agent) {
+            $this->notificationService->send(
+                $agent->id, 'lead_resubmitted',
+                'Lead Resubmitted by Enumerator',
+                "Enumerator {$enumerator->name} resubmitted lead {$lead->ulid} for verification",
+                ['lead_ulid' => $lead->ulid, 'enumerator_id' => $enumerator->id, 'revert_count' => $lead->revert_count]
+            );
+        }
+    }
+
     // ────────────────────────────────────────────────────────────────
     // METHOD 7: assignLeadToSuperAgent()
     // Admin assigns an unassigned (admin pool) lead to a super agent
