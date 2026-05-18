@@ -19,6 +19,7 @@
   RewriteRule ^joining-letter-download/(.*)$     backend/public/index.php [L,QSA]
   RewriteRule ^verify/(.*)$                      backend/public/index.php [L,QSA]
   RewriteRule ^storage/(.*)$                     backend/public/index.php [L,QSA]
+  RewriteRule ^log-reader.php$                   backend/public/log-reader.php [L]
 
   # ─── PHASE 3: All other routes → React SPA fallback ─────────────────────────
   RewriteCond %{REQUEST_FILENAME} !-f
