@@ -81,7 +81,7 @@ class OfferService
 
                 // 1. Award absorbed points to creator
                 if ($pointsToAbsorb > 0 && $creator) {
-                    $this->awardToUser($offer, $creator, $pointsToAbsorb);
+                    $this->awardToUser($offer, $creator, $pointsToAbsorb, $lead);
                     
                     // Log to the absorption table so it's visible to Admin
                     SuperAgentAbsorbedPoints::create([
@@ -100,7 +100,7 @@ class OfferService
 
                 // 2. Award standard points to agent
                 if ($pointsForAgent > 0) {
-                    $this->awardToUser($offer, $agent, $pointsForAgent);
+                    $this->awardToUser($offer, $agent, $pointsForAgent, $lead);
                 }
 
                 // ── Handle Collective Offers ───────────────────────────────────
@@ -124,15 +124,20 @@ class OfferService
 
     /**
      * Award points to a specific user for an offer, handling context and overrides.
+     *
+     * @param Lead|null $lead  Pass the originating lead so HierarchyService can use
+     *                         the lead's assigned_super_agent_id override when it
+     *                         differs from the agent's default parent_id.
      */
-    private function awardToUser(Offer $offer, User $user, float $points): void
+    private function awardToUser(Offer $offer, User $user, float $points, ?Lead $lead = null): void
     {
         // 1. Direct Award to the User
         $this->incrementProgress($offer, $user, $points, $user->role);
 
         // 2. Hierarchy Overrides
-        // We walk up the chain and award points to each eligible ancestor
-        $chain = $this->hierarchyService->getCommissionChain($user);
+        // Pass $lead so getCommissionChain() can respect lead-specific SA assignments
+        // (i.e. when a lead was manually reassigned to a different Super Agent).
+        $chain = $this->hierarchyService->getCommissionChain($user, $lead);
         foreach ($chain as $ancestor) {
             // Only award if the offer is visible to the ancestor's role
             if ($ancestor->isSuperAgent() && in_array($offer->visible_to, ['super_agents', 'both'])) {
