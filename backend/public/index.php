@@ -20,7 +20,7 @@ if (strpos($uri, '/storage/') !== false) {
     }
 
     $persistentPublic = '/home/u596750690/solar_storage/public';
-    $fullPath = is_dir($persistentPublic) 
+    $fullPath = @is_dir($persistentPublic) 
         ? $persistentPublic . '/' . $path 
         : __DIR__.'/../storage/app/public/' . $path;
     if (file_exists($fullPath) && is_file($fullPath)) {
