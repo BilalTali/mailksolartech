@@ -172,7 +172,46 @@ if (file_exists($localPublic)) {
 
 echo "\n";
 
-// 2. Read Laravel Log File
+// 2. Test Laravel Bootstrap
+echo "Laravel Framework Bootstrap Test:\n";
+echo "--------------------------------------------------\n";
+try {
+    if (!file_exists(__DIR__.'/../vendor/autoload.php')) {
+        throw new \Exception("vendor/autoload.php not found. Did you run 'composer install'?");
+    }
+    require_once __DIR__.'/../vendor/autoload.php';
+    
+    if (!file_exists(__DIR__.'/../bootstrap/app.php')) {
+        throw new \Exception("bootstrap/app.php not found.");
+    }
+    
+    /** @var \Illuminate\Foundation\Application $app */
+    $app = require_once __DIR__.'/../bootstrap/app.php';
+    
+    // Resolve Http Kernel
+    $kernel = $app->make(\Illuminate\Contracts\Http\Kernel::class);
+    echo "Laravel Application Booted successfully!\n";
+    
+    // Test DB connection via Laravel DB Facade
+    echo "Testing Database via Laravel DB Facade...\n";
+    $dbName = \Illuminate\Support\Facades\DB::connection()->getDatabaseName();
+    echo "Laravel DB Connection SUCCESS! Database Name: '$dbName'\n";
+    
+    // Try to get public settings via Setting Model to see if the settings table has any model errors
+    echo "Testing Setting Model...\n";
+    $settingsCount = \App\Models\Setting::count();
+    echo "Setting Model SUCCESS! Stored settings count: $settingsCount\n";
+    
+} catch (\Throwable $e) {
+    echo "Laravel Bootstrap FAILED with Exception:\n";
+    echo "Message: " . $e->getMessage() . "\n";
+    echo "File: " . $e->getFile() . ":" . $e->getLine() . "\n";
+    echo "Stack Trace:\n" . $e->getTraceAsString() . "\n";
+}
+
+echo "\n";
+
+// 3. Read Laravel Log File
 echo "Last 50 Lines of Laravel Log:\n";
 echo "--------------------------------------------------\n";
 
