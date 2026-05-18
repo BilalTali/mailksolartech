@@ -1,0 +1,1 @@
+const a={"Jammu & Kashmir":["Anantnag","Bandipore","Baramulla","Budgam","Doda","Ganderbal","Jammu","Kathua","Kishtwar","Kulgam","Kupwara","Poonch","Pulwama","Rajouri","Ramban","Reasi","Samba","Shopian","Srinagar","Udhampur"],Ladakh:["Kargil","Leh"]},m=Object.keys(a);export{m as I,a as S};
