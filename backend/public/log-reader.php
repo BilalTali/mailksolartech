@@ -29,27 +29,75 @@ echo "Cache Path Writable: " . (is_writable(__DIR__ . '/../storage/framework/cac
 
 // Test DB Connection
 if (file_exists(__DIR__ . '/../.env')) {
-    $env = parse_ini_file(__DIR__ . '/../.env');
-    if ($env) {
+    $lines = file(__DIR__ . '/../.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    $env = [];
+    foreach ($lines as $line) {
+        if (strpos(trim($line), '#') === 0) continue;
+        $parts = explode('=', $line, 2);
+        if (count($parts) === 2) {
+            $key = trim($parts[0]);
+            $val = trim($parts[1]);
+            // Strip potential quotes
+            if (preg_match('/^"?(.*?)"?$/', $val, $matches)) {
+                $val = $matches[1];
+            }
+            $env[$key] = $val;
+        }
+    }
+    
+    if (!empty($env)) {
         $host = $env['DB_HOST'] ?? 'localhost';
+        $port = $env['DB_PORT'] ?? '3306';
         $db = $env['DB_DATABASE'] ?? '';
         $user = $env['DB_USERNAME'] ?? '';
         $pass = $env['DB_PASSWORD'] ?? '';
         
         try {
-            $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass, [
+            $pdo = new PDO("mysql:host=$host;port=$port;dbname=$db;charset=utf8mb4", $user, $pass, [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_TIMEOUT => 3
             ]);
-            echo "Database Connection: SUCCESS\n";
+            echo "Database Connection: SUCCESS (Connected to database: '$db' on '$host')\n";
         } catch (\Exception $e) {
             echo "Database Connection: FAILED (" . $e->getMessage() . ")\n";
+            echo "Attempted: host=$host, port=$port, dbname=$db, username=$user\n";
         }
     } else {
-        echo "Database Connection: UNABLE TO PARSE .env\n";
+        echo "Database Connection: UNABLE TO PARSE .env (no key-value pairs parsed)\n";
     }
 } else {
     echo "Database Connection: NO .env FILE\n";
+}
+
+echo "\n";
+
+// 1.2 Check Bootstrap Cache Files
+echo "Bootstrap Cache Check:\n";
+echo "--------------------------------------------------\n";
+$cacheDir = __DIR__ . '/../bootstrap/cache/';
+if (is_dir($cacheDir)) {
+    echo "Directory exists: $cacheDir\n";
+    $files = array_diff(scandir($cacheDir), ['.', '..', '.gitignore']);
+    if (count($files) > 0) {
+        echo "Found cached files (THESE SHOULD BE CLEARED ON LIVE SERVER!):\n";
+        foreach ($files as $file) {
+            $filePath = $cacheDir . $file;
+            echo " - $file (" . filesize($filePath) . " bytes, Last modified: " . date('Y-m-d H:i:s', filemtime($filePath)) . ")\n";
+            
+            // Check for potential absolute path leaks in cached config
+            if ($file === 'config.php') {
+                $content = file_get_contents($filePath);
+                if (strpos($content, '/Users/computergallery') !== false) {
+                    echo "   ⚠️ WARNING: This cached config contains absolute paths from the local Mac development machine!\n";
+                    echo "   This WILL cause 500 errors on the live server. Run 'php artisan config:clear' on the live server immediately.\n";
+                }
+            }
+        }
+    } else {
+        echo "No cached files found. (Good - cache is clear)\n";
+    }
+} else {
+    echo "bootstrap/cache directory NOT found!\n";
 }
 
 echo "\n";
