@@ -58,6 +58,23 @@ if (file_exists(__DIR__ . '/../.env')) {
                 PDO::ATTR_TIMEOUT => 3
             ]);
             echo "Database Connection: SUCCESS (Connected to database: '$db' on '$host')\n";
+            
+            // Query branding settings
+            echo "\nDatabase Settings Table Inspection:\n";
+            echo "--------------------------------------------------\n";
+            try {
+                $stmt = $pdo->query("SELECT `key`, `value` FROM `settings` WHERE `key` LIKE '%logo%' OR `key` LIKE '%icon%' OR `key` LIKE '%background%' OR `key` LIKE '%branding%' OR `key` = 'app_name'");
+                $settings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                if (count($settings) > 0) {
+                    foreach ($settings as $row) {
+                        echo "Key: " . str_pad($row['key'], 25) . " -> Value: " . $row['value'] . "\n";
+                    }
+                } else {
+                    echo "No branding keys found in 'settings' table.\n";
+                }
+            } catch (\Exception $dbEx) {
+                echo "Error querying 'settings' table: " . $dbEx->getMessage() . "\n";
+            }
         } catch (\Exception $e) {
             echo "Database Connection: FAILED (" . $e->getMessage() . ")\n";
             echo "Attempted: host=$host, port=$port, dbname=$db, username=$user\n";
