@@ -76,8 +76,7 @@ if (@is_dir($solarStorage)) {
                         $inner = array_diff(scandir($itempath), ['.', '..']);
                         echo "     * $item/ directory has " . count($inner) . " files.\n";
                         if (count($inner) > 0) {
-                            $sample = array_slice($inner, 0, 3);
-                            echo "       Samples: " . implode(', ', $sample) . "\n";
+                            echo "       Files: " . implode(', ', $inner) . "\n";
                         }
                     } else {
                         echo "     * File: $item\n";
