@@ -54,7 +54,11 @@ auth.json
 # ==========================================
 # Build / Distribution Artifacts
 # ==========================================
-# dist/
+# frontend/dist is FULLY excluded:
+# - It is built on the live server via CI/CD or manually.
+# - Committing it overwrites live server branding assets (logo, favicon, PWA icons).
+# - Any git pull would reset the live server's customised assets.
+frontend/dist/
 dist.tar.gz
 dist-ssr/
 stats.html
@@ -62,6 +66,13 @@ public/build/
 public/hot/
 public/js/chunk-*
 public/css/chunk-*
+
+# ==========================================
+# Live Server Branding Assets (backend/public)
+# ==========================================
+# These are uploaded/customised directly on the live server.
+# Tracking them means every git push resets the live branding.
+backend/public/favicon.ico
 
 # ==========================================
 # Laravel / Backend Output & Cache
@@ -94,9 +105,21 @@ backend/storage/logs/*
 backend/bootstrap/cache/*
 !backend/bootstrap/cache/.gitignore
 
-# Protect Hostinger uploads from git clean (100% ignored to prevent git clean deletion)
+# ==========================================
+# Live Server Upload Directories
+# ==========================================
+# ALL user-uploaded and server-side generated files are excluded.
+# Git MUST NEVER touch these — a pull would wipe live lead documents,
+# branding assets, offer images, receipts, profiles and survey photos.
 backend/storage/app/public/branding/
 backend/storage/app/public/homepage/
+backend/storage/app/public/profiles/
+backend/storage/app/public/offer_images/
+backend/storage/app/public/achievements/
+backend/storage/app/public/admin_receipts/
+backend/storage/app/public/ledger_receipts/
+backend/storage/app/public/survey_photos/
+backend/storage/app/public/leads/
 backend/storage/app/leads/
 backend/storage/app/private/
 
