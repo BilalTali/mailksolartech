@@ -54,6 +54,60 @@ if (file_exists(__DIR__ . '/../.env')) {
 
 echo "\n";
 
+// 1.5. Analyze Persistent Storage Directories
+echo "Persistent Storage Analysis:\n";
+echo "--------------------------------------------------\n";
+$solarStorage = '/home/u596750690/solar_storage';
+if (@is_dir($solarStorage)) {
+    echo "Directory exists: $solarStorage\n";
+    $subdirs = ['public', 'private', 'leads'];
+    foreach ($subdirs as $sub) {
+        $subpath = "$solarStorage/$sub";
+        if (@is_dir($subpath)) {
+            echo " - $subpath exists\n";
+            $files = array_diff(scandir($subpath), ['.', '..']);
+            echo "   Contains " . count($files) . " items/dirs.\n";
+            
+            // Look deeper inside public
+            if ($sub === 'public') {
+                foreach ($files as $item) {
+                    $itempath = "$subpath/$item";
+                    if (@is_dir($itempath)) {
+                        $inner = array_diff(scandir($itempath), ['.', '..']);
+                        echo "     * $item/ directory has " . count($inner) . " files.\n";
+                        if (count($inner) > 0) {
+                            $sample = array_slice($inner, 0, 3);
+                            echo "       Samples: " . implode(', ', $sample) . "\n";
+                        }
+                    } else {
+                        echo "     * File: $item\n";
+                    }
+                }
+            }
+        } else {
+            echo " - $subpath NOT FOUND\n";
+        }
+    }
+} else {
+    echo "Directory NOT found: $solarStorage\n";
+}
+
+// Check local public storage link
+$localPublic = __DIR__ . '/../storage/app/public';
+echo "\nLocal app/public path: $localPublic\n";
+if (file_exists($localPublic)) {
+    echo " - Path exists. Is link: " . (is_link($localPublic) ? 'YES' : 'NO') . "\n";
+    if (is_link($localPublic)) {
+        echo "   Target: " . readlink($localPublic) . "\n";
+    } else {
+        echo "   (This is a physical directory, not a symlink!)\n";
+    }
+} else {
+    echo " - Path does not exist!\n";
+}
+
+echo "\n";
+
 // 2. Read Laravel Log File
 echo "Last 50 Lines of Laravel Log:\n";
 echo "--------------------------------------------------\n";
