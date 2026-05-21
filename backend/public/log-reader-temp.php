@@ -82,7 +82,32 @@ try {
     echo "Laravel Application Booted successfully!\n";
     
     $dbName = \Illuminate\Support\Facades\DB::connection()->getDatabaseName();
-    echo "Laravel DB Connection SUCCESS! Database: '$dbName'\n";
+    echo "Laravel DB Connection SUCCESS! Database: '$dbName'\n\n";
+
+    echo "Field Technicians (Role = field_technical_team):\n";
+    echo str_pad("ID", 5) . str_pad("Name", 30) . str_pad("Email", 30) . str_pad("Parent ID", 12) . str_pad("Parent Name", 25) . "\n";
+    echo str_repeat("-", 102) . "\n";
+    $techs = \App\Models\User::roleFieldTechnicalTeam()->get();
+    foreach ($techs as $tech) {
+        $parent = \App\Models\User::find($tech->parent_id);
+        $parentName = $parent ? $parent->name : 'NULL';
+        echo str_pad($tech->id, 5) . 
+             str_pad(substr($tech->name, 0, 28), 30) . 
+             str_pad(substr($tech->email, 0, 28), 30) . 
+             str_pad($tech->parent_id ?? 'NULL', 12) . 
+             str_pad(substr($parentName, 0, 23), 25) . "\n";
+    }
+    
+    echo "\nAll Admins:\n";
+    echo str_pad("ID", 5) . str_pad("Name", 30) . str_pad("Email", 30) . str_pad("Role", 15) . "\n";
+    echo str_repeat("-", 80) . "\n";
+    $admins = \App\Models\User::whereIn('role', ['admin', 'super_admin'])->get();
+    foreach ($admins as $adm) {
+        echo str_pad($adm->id, 5) . 
+             str_pad(substr($adm->name, 0, 28), 30) . 
+             str_pad(substr($adm->email, 0, 28), 30) . 
+             str_pad($adm->role, 15) . "\n";
+    }
     
 } catch (\Throwable $e) {
     echo "Laravel Bootstrap FAILED:\n";
