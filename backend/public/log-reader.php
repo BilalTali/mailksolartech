@@ -60,11 +60,6 @@ foreach ($lines as $line) {
     }
 }
 
-echo "Database config found:\n";
-echo "Host: " . $dbConfig['DB_HOST'] . "\n";
-echo "Database: " . $dbConfig['DB_DATABASE'] . "\n";
-echo "Username: " . $dbConfig['DB_USERNAME'] . "\n\n";
-
 try {
     $dsn = "mysql:host=" . $dbConfig['DB_HOST'] . ";port=" . $dbConfig['DB_PORT'] . ";dbname=" . $dbConfig['DB_DATABASE'] . ";charset=utf8mb4";
     $pdo = new PDO($dsn, $dbConfig['DB_USERNAME'], $dbConfig['DB_PASSWORD'], [
@@ -73,6 +68,11 @@ try {
         PDO::ATTR_TIMEOUT => 5
     ]);
     echo "Database Connection: SUCCESS\n\n";
+
+    // Perform correction of legacy technicians ownership to Latif Ahmad Tali (ID 2)
+    echo "Fixing ownership of legacy technicians (ID 21 & 22) -> Latif Ahmad Tali (ID 2):\n";
+    $affected = $pdo->exec("UPDATE users SET parent_id = 2 WHERE id IN (21, 22) AND role = 'field_technical_team' AND parent_id IS NULL");
+    echo "Rows updated: $affected\n\n";
 
     // 1. Query field technicians
     echo "Field Technicians (from database):\n";
