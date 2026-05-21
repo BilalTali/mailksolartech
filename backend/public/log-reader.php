@@ -1,7 +1,7 @@
 <?php
 
 /**
- * MalikSolarTech — Temporary Live Server Diagnostic Tool (Raw PHP version)
+ * MalikSolarTech — Temporary Live Server Raw DB Diagnostics (Multi-path version)
  */
 
 header('Content-Type: text/plain; charset=utf-8');
@@ -11,10 +11,30 @@ echo " MalikSolarTech Live Server Raw DB Diagnostics\n";
 echo " Time: " . date('Y-m-d H:i:s') . "\n";
 echo "==================================================\n\n";
 
-$envPath = __DIR__ . '/../.env';
-if (!file_exists($envPath)) {
-    die("Error: .env file does not exist at: $envPath\n");
+$pathsToTry = [
+    __DIR__ . '/../.env',
+    __DIR__ . '/../../.env',
+    '/home/u596750690/domains/maliksolartech.com/public_html/backend/.env',
+    '/home/u596750690/domains/maliksolartech.com/public_html/.env'
+];
+
+$envPath = null;
+echo "Scanning for .env file:\n";
+foreach ($pathsToTry as $path) {
+    $real = realpath($path);
+    $exists = file_exists($path) ? 'YES' : 'NO';
+    $readable = is_readable($path) ? 'YES' : 'NO';
+    echo "Path: $path\n  Exists: $exists, Readable: $readable, RealPath: " . ($real ?: 'N/A') . "\n";
+    if ($exists === 'YES' && $readable === 'YES' && !$envPath) {
+        $envPath = $path;
+    }
 }
+
+if (!$envPath) {
+    die("\nError: No readable .env file found in any scanned path.\n");
+}
+
+echo "\nUsing .env file at: $envPath\n\n";
 
 // Simple manual .env parser
 $dbConfig = [
