@@ -28,7 +28,6 @@ class AdminEnumeratorController extends Controller
             $managedIds = $user->getManagedUserIds();
             $query->where(function ($q) use ($user, $managedIds) {
                 $q->whereIn('parent_id', $managedIds)
-                  ->orWhereNull('parent_id') // Publicly registered enumerators
                   ->orWhereIn('created_by_agent_id', $managedIds)
                   ->orWhereIn('created_by_super_agent_id', $managedIds);
             });
