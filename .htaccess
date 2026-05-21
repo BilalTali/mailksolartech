@@ -13,6 +13,7 @@
 
   # ─── PHASE 2: Route Backend API & special paths to Laravel ───────────────────
   RewriteRule ^api/(.*)$                          backend/public/index.php [L,QSA]
+  RewriteRule ^leads/(.*)$                        backend/public/index.php [L,QSA]
   RewriteRule ^document-view/(.*)$               backend/public/index.php [L,QSA]
   RewriteRule ^icard-download/(.*)$              backend/public/index.php [L,QSA]
   RewriteRule ^icard-download2/(.*)$             backend/public/index.php [L,QSA]
