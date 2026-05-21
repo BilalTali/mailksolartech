@@ -26,17 +26,6 @@ echo ".env File Exists: " . (file_exists(__DIR__ . '/../.env') ? 'YES' : 'NO') .
 echo "Storage Path Writable: " . (is_writable(__DIR__ . '/../storage') ? 'YES' : 'NO') . "\n";
 echo "Cache Path Writable: " . (is_writable(__DIR__ . '/../storage/framework/cache') ? 'YES' : 'NO') . "\n";
 
-// Check Bootstrap Cache Files
-$cacheDir = __DIR__ . '/../bootstrap/cache/';
-if (is_dir($cacheDir)) {
-    echo "bootstrap/cache directory exists.\n";
-    $files = array_diff(scandir($cacheDir), ['.', '..', '.gitignore']);
-    foreach ($files as $file) {
-        $filePath = $cacheDir . $file;
-        echo " - $file (" . filesize($filePath) . " bytes)\n";
-    }
-}
-
 // Test DB Connection
 if (file_exists(__DIR__ . '/../.env')) {
     $env = parse_ini_file(__DIR__ . '/../.env');
