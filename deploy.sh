@@ -46,7 +46,7 @@ echo "   Pull complete."
 echo ""
 echo "[3/5] Installing Composer dependencies..."
 cd backend
-composer install --no-dev --optimize-autoloader --no-interaction 2>&1 | tail -5
+composer install --no-dev --optimize-autoloader --no-interaction
 cd ..
 echo "   Composer done."
 
