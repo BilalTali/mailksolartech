@@ -27,7 +27,7 @@ class StatusTransitionService
     // Legacy constant kept for backward compat with any direct reference — delegates to enum.
     // @deprecated Use allStatuses() instead.
     public const ALL_STATUSES = [
-        'NEW', 'REJECTED', 'REGISTERED', 'SURVEY_DONE',
+        'NEW', 'DOCUMENTS_FOR_REGISTRATION_COMPLETED', 'REJECTED', 'REGISTERED', 'SURVEY_DONE',
         'LEAD_DOCUMENTS_PRINTED', 'SIGNATURE_PENDING', 'SIGNATURE_DONE',
         'FILE_SUBMITTED_TO_BANK', 'FILE_PENDING_DISBURSAL', 'FILE_DISBURSED',
         'DISBURSEMENT_VERIFIED', 'DISPATCH_INITIATED', 'IN_TRANSIT', 'DELIVERED',

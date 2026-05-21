@@ -8,6 +8,7 @@
 export const LEAD_STATUS_CONFIG: Record<string, { label: string; color: string; badgeClass: string }> = {
     // ── Exact Requested Order ──
     'NEW': { label: 'NEW', color: 'bg-gray-100 text-gray-700', badgeClass: 'badge-new' },
+    'DOCUMENTS_FOR_REGISTRATION_COMPLETED': { label: 'DOCUMENTS FOR REGISTRATION COMPLETED', color: 'bg-amber-50 text-amber-700', badgeClass: 'badge-docs-reg' },
     'REJECTED': { label: 'REJECTED', color: 'bg-red-50 text-red-700', badgeClass: 'badge-rejected' },
     'REGISTERED': { label: 'REGISTERED AT MNRE.', color: 'bg-indigo-50 text-indigo-700', badgeClass: 'badge-registered' },
     'SURVEY_DONE': { label: 'SITE SURVEY COMPLETED', color: 'bg-purple-50 text-purple-700', badgeClass: 'badge-survey' },
@@ -44,6 +45,7 @@ export const LEAD_STATUS_OPTIONS = Object.entries(LEAD_STATUS_CONFIG).map(([valu
 // ─────────────────────────────────────────────────────────────
 export const ORDERED_PIPELINE: string[] = [
     'NEW',
+    'DOCUMENTS_FOR_REGISTRATION_COMPLETED',
     'REJECTED',
     'REGISTERED',
     'SURVEY_DONE',
@@ -108,6 +110,7 @@ export function getLeadStatusBadgeClass(status: string): string {
 
 export const MILESTONE_STATUSES = [
     'NEW',
+    'DOCUMENTS_FOR_REGISTRATION_COMPLETED',
     'REJECTED',
     'REGISTERED',
     'SURVEY_DONE',

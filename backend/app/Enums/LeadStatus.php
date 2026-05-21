@@ -9,6 +9,7 @@ enum LeadStatus: string
 {
     // ── Pipeline Statuses (Sequential Order) ─────────────────────────────────
     case NEW                      = 'NEW';
+    case DOCUMENTS_FOR_REGISTRATION_COMPLETED = 'DOCUMENTS_FOR_REGISTRATION_COMPLETED';
     case REGISTERED               = 'REGISTERED';
     case SURVEY_DONE              = 'SURVEY_DONE';
     case LEAD_DOCUMENTS_PRINTED   = 'LEAD_DOCUMENTS_PRINTED';
@@ -62,6 +63,7 @@ enum LeadStatus: string
         return match ($this) {
             // Pipeline
             self::NEW                    => 'NEW',
+            self::DOCUMENTS_FOR_REGISTRATION_COMPLETED => 'DOCUMENTS FOR REGISTRATION COMPLETED',
             self::REJECTED               => 'REJECTED',
             self::FILE_REJECTED          => 'FILE REJECTED',
             self::REGISTERED             => 'REGISTERED AT MNRE',

@@ -42,12 +42,16 @@ class UpdateLeadStatusRequest extends FormRequest
             'installation_scheduled_at' => 'nullable|date',
         ];
 
-        // REGISTERED requires supporting documents.
+        // REGISTERED (at MNRE) — only requires a registration number.
+        // The billing docs are already attached at DOCUMENTS_FOR_REGISTRATION_COMPLETED stage.
         if ($this->input('status') === 'REGISTERED') {
-            $rules['feasibility_report']  = 'required|file|max:5120|mimes:pdf,jpg,jpeg,png';
-            $rules['e_token']             = 'required|file|max:5120|mimes:pdf,jpg,jpeg,png';
             $rules['registration_number'] = 'required|string|max:100';
+            // feasibility_report and e_token are now optional (uploaded separately if needed)
         }
+
+        // DOCUMENTS_FOR_REGISTRATION_COMPLETED — no extra doc required at this stage;
+        // billing data is saved via the RegistrationQueueController::register() endpoint.
+        // This block left intentionally empty — validation passes with just status + notes.
 
         \Illuminate\Support\Facades\Log::info("VALIDATION PAYLOAD:", $this->all()); return $rules;
     }

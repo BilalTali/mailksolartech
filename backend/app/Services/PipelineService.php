@@ -37,6 +37,7 @@ class PipelineService
      */
     public const ORDERED_PIPELINE = [
         'NEW',
+        'DOCUMENTS_FOR_REGISTRATION_COMPLETED',
         'REJECTED',
         'REGISTERED',
         'SURVEY_DONE',
@@ -81,6 +82,7 @@ class PipelineService
      */
     public const BANKING_ELIGIBLE_STATUSES = [
         'NEW',                  // admin can print documents even before MNRE registration
+        'DOCUMENTS_FOR_REGISTRATION_COMPLETED', // billing done, awaiting MNRE registration
         'REGISTERED',
         'SURVEY_DONE',          // survey done first, banking can still proceed
         'LEAD_DOCUMENTS_PRINTED',
@@ -95,6 +97,7 @@ class PipelineService
      */
     private const ACTOR_MAP = [
         'NEW'                      => ['admin', 'super_admin', 'operator'],
+        'DOCUMENTS_FOR_REGISTRATION_COMPLETED' => ['admin', 'super_admin', 'operator'],
         'REGISTERED'               => ['admin', 'super_admin', 'operator'],
         'SURVEY_DONE'              => ['admin', 'super_admin', 'operator', 'field_technical_team'],
         // Bank sub-steps

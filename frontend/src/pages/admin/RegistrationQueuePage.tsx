@@ -70,9 +70,10 @@ export default function RegistrationQueuePage() {
     const registerMutation = useMutation({
         mutationFn: async (data: any) => api.post(`/admin/leads/${data.ulid}/register`, data.payload),
         onSuccess: () => {
-            toast.success('Lead registered and bill generated ✅');
+            toast.success('Bill generated ✅ — Lead now awaits MNRE registration number');
             setRegisterModal({ lead: null, bill_serial: '', bill_date: new Date().toISOString().split('T')[0], system_item: '', system_make: '', notes: '', items: [] });
             queryClient.invalidateQueries({ queryKey: ['admin-registration-queue'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-leads'] });
         },
         onError: (e: any) => toast.error(e?.response?.data?.message || 'Failed to register'),
     });
@@ -177,8 +178,9 @@ export default function RegistrationQueuePage() {
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 space-y-6 my-8">
                         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                             <div>
-                                <h3 className="font-black text-slate-800 text-xl">Generate Bill & Register</h3>
+                                <h3 className="font-black text-slate-800 text-xl">Generate Bill & Complete Docs</h3>
                                 <p className="text-xs text-slate-500">Lead: {registerModal.lead.beneficiary_name}</p>
+                                <p className="text-[10px] text-amber-600 bg-amber-50 px-2 py-1 rounded-lg mt-1 font-semibold">📄 After submitting, Bills & Agreement will auto-appear in lead documents. Submit MNRE reg. number next.</p>
                             </div>
                             <button onClick={() => setRegisterModal((p) => ({ ...p, lead: null }))} className="text-slate-400 hover:text-slate-600">
                                 <XCircle className="w-6 h-6" />
@@ -323,7 +325,7 @@ export default function RegistrationQueuePage() {
                             disabled={registerMutation.isPending || !registerModal.bill_serial || !registerModal.system_item || registerModal.items.filter(i => i.id !== 0).length === 0}
                             className="w-full py-3 rounded-xl bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-700 transition disabled:opacity-50"
                         >
-                            {registerMutation.isPending ? 'Processing...' : 'Confirm Registration & Bill'}
+                            {registerMutation.isPending ? 'Processing...' : 'Confirm Bill Generation & Complete Docs'}
                         </button>
                     </div>
                 </div>

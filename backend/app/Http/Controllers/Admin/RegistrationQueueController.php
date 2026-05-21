@@ -133,7 +133,7 @@ class RegistrationQueueController extends Controller
 
             $this->leadService->updateStatus(
                 lead: $lead,
-                newStatus: 'REGISTERED',
+                newStatus: 'DOCUMENTS_FOR_REGISTRATION_COMPLETED',
                 changedById: $request->user()->id,
                 notes: $request->input('notes')
             );
@@ -143,7 +143,7 @@ class RegistrationQueueController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Lead registered and bill generated successfully.'
+            'message' => 'Bill generated. Lead is now pending MNRE registration number submission.'
         ]);
     }
 
