@@ -1186,11 +1186,17 @@ export default function AdminLeadsPage() {
                                             const parallelZone = ['REGISTERED', ...parallelStatuses];
                                             const inParallel = parallelZone.includes(fullLead?.status ?? '');
 
+                                            // Allow LEAD_DOCUMENTS_PRINTED for NEW leads so admin can print
+                                            // bills/agreements before MNRE registration
+                                            const isNewLead = fullLead?.status === 'NEW';
+
                                             const forwardOptions = LEAD_STATUS_OPTIONS.filter(opt => {
-                                                // Parallel steps are checkboxes; all others (including Registered) are dropdowns
-                                                if (parallelStatuses.includes(opt.value)) return false; 
-                                                // Show all available options to Admin for full control
-                                                return true; 
+                                                // For NEW leads: show LEAD_DOCUMENTS_PRINTED as the pre-registration billing step
+                                                if (isNewLead && opt.value === 'LEAD_DOCUMENTS_PRINTED') return true;
+                                                // All other parallel steps are handled by the parallel zone view
+                                                if (parallelStatuses.includes(opt.value)) return false;
+                                                // Show all non-parallel options to Admin for full control
+                                                return true;
                                             });
 
                                             if (inParallel) {

@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
  *
  * Two independent tracks run in parallel after REGISTERED:
  *  ── Survey Track (field_technical_team): REGISTERED → SURVEY_DONE
- *  ── Banking Track (lead creator):        REGISTERED → LEAD_DOCUMENTS_PRINTED → SIGNATURE_PENDING → SIGNATURE_DONE → FILE_DISBURSED
+ *  ── Banking Track (lead creator):        NEW/REGISTERED → LEAD_DOCUMENTS_PRINTED → SIGNATURE_PENDING → SIGNATURE_DONE → FILE_DISBURSED
  *
  * Both tracks MUST be complete before DISBURSEMENT_VERIFIED (admin merges them).
  *
@@ -80,6 +80,7 @@ class PipelineService
      * A lead at any of these can proceed to LEAD_DOCUMENTS_PRINTED.
      */
     public const BANKING_ELIGIBLE_STATUSES = [
+        'NEW',                  // admin can print documents even before MNRE registration
         'REGISTERED',
         'SURVEY_DONE',          // survey done first, banking can still proceed
         'LEAD_DOCUMENTS_PRINTED',
