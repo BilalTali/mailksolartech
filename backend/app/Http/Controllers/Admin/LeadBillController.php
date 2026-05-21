@@ -70,10 +70,10 @@ class LeadBillController extends Controller
 
     private function ensureLeadIsEligibleForDocuments(Lead $lead): void
     {
-        $eligibleStatuses = ['COMPLETED', 'REGISTERED', 'SITE_SURVEY', 'AT_BANK', 'PROJECT_COMMISSIONING', 'SUBSIDY_REQUEST', 'SUBSIDY_APPLIED', 'SUBSIDY_DISBURSED'];
+        $eligibleStatuses = \App\Enums\LeadStatus::values();
         
         if (!in_array($lead->status, $eligibleStatuses)) {
-            abort(403, 'Document is only available after the lead is registered.');
+            abort(403, 'Document is only available for active leads.');
         }
     }
 }

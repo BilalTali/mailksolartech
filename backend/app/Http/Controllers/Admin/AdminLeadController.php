@@ -25,6 +25,7 @@ class AdminLeadController extends Controller
             'assignedSuperAgent:id,name,role', 
             'assignedAgent:id,name,role', 
             'submittedByAgent:id,name,role', 
+            'submittedByEnumerator:id,name,role,enumerator_id',
             'createdBySuperAgent:id,name,role', 
             'assignedSurveyor:id,name,role', 
             'assignedInstaller:id,name,role',
@@ -176,10 +177,11 @@ class AdminLeadController extends Controller
             'admin_notes'          => 'sometimes|nullable|string|max:2000',
             
             // Billing fields
-            'billing_items'          => 'sometimes|nullable|array',
+            'billing_items'              => 'sometimes|nullable|array',
             'billing_items.*.description' => 'required_with:billing_items|string|max:255',
-            'billing_items.*.make'   => 'nullable|string|max:255',
-            'billing_items.*.rate'   => 'required_with:billing_items|numeric|min:0',
+            'billing_items.*.make'       => 'nullable|string|max:255',
+            'billing_items.*.qty'        => 'sometimes|numeric|min:0',
+            'billing_items.*.rate'       => 'required_with:billing_items|numeric|min:0',
             'quotation_serial'       => 'sometimes|nullable|string|max:100',
             'receipt_serial'         => 'sometimes|nullable|string|max:100',
             'billing_gst_percentage' => 'sometimes|numeric|min:0|max:100',
@@ -188,7 +190,11 @@ class AdminLeadController extends Controller
 
         if ($request->has('billing_items')) {
             $items = $request->input('billing_items', []);
-            $baseAmount = collect($items)->sum('rate');
+            $baseAmount = collect($items)->reduce(function ($carry, $item) {
+                $qty  = isset($item['qty'])  ? (float) $item['qty']  : 1.0;
+                $rate = isset($item['rate']) ? (float) $item['rate'] : 0.0;
+                return $carry + ($qty * $rate);
+            }, 0.0);
             $gstPercentage = (float) $request->input('billing_gst_percentage', 5.0);
             $gstAmount = $baseAmount * ($gstPercentage / 100);
             $totalAmount = $baseAmount + $gstAmount;

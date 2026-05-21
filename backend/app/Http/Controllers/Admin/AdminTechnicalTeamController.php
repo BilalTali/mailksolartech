@@ -14,8 +14,14 @@ class AdminTechnicalTeamController extends Controller
      */
     public function index(Request $request)
     {
-        $technicians = User::roleFieldTechnicalTeam()
-            ->select(['id', 'name', 'email', 'mobile', 'status', 'technician_type', 'created_at'])
+        $user = $request->user();
+        $query = User::roleFieldTechnicalTeam();
+
+        if (!$user->isSuperAdmin()) {
+            $query->where('parent_id', $user->id);
+        }
+
+        $technicians = $query->select(['id', 'name', 'email', 'mobile', 'status', 'technician_type', 'created_at'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -40,6 +46,7 @@ class AdminTechnicalTeamController extends Controller
             'email'           => $request->email,
             'mobile'          => $request->mobile,
             'technician_type' => $request->technician_type,
+            'parent_id'       => $request->user()->id,
         ]);
 
         $technician->role     = 'field_technical_team';
@@ -61,7 +68,14 @@ class AdminTechnicalTeamController extends Controller
     {
         $request->validate(['status' => 'required|in:active,inactive']);
 
-        $technician = User::roleFieldTechnicalTeam()->findOrFail($id);
+        $user = $request->user();
+        $query = User::roleFieldTechnicalTeam();
+
+        if (!$user->isSuperAdmin()) {
+            $query->where('parent_id', $user->id);
+        }
+
+        $technician = $query->findOrFail($id);
         $technician->status = $request->status;
         $technician->save();
 
@@ -75,9 +89,16 @@ class AdminTechnicalTeamController extends Controller
     /**
      * Soft-delete a technician account.
      */
-    public function destroy(int $id)
+    public function destroy(Request $request, int $id)
     {
-        $technician = User::roleFieldTechnicalTeam()->findOrFail($id);
+        $user = $request->user();
+        $query = User::roleFieldTechnicalTeam();
+
+        if (!$user->isSuperAdmin()) {
+            $query->where('parent_id', $user->id);
+        }
+
+        $technician = $query->findOrFail($id);
         $technician->delete();
 
         return response()->json(['success' => true, 'message' => 'Technician removed.']);

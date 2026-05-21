@@ -51,7 +51,7 @@ export default function AdminLeadsPage() {
     const [quotationSerial, setQuotationSerial] = useState('1');
     const [receiptSerial, setReceiptSerial] = useState('1');
     const [receiptPercentage, setReceiptPercentage] = useState('10');
-    const [billingItemsList, setBillingItemsList] = useState<{ description: string; make: string; rate: string }[]>([]);
+    const [billingItemsList, setBillingItemsList] = useState<{ description: string; make: string; qty: string; rate: string }[]>([]);
     const [gstPercentage, setGstPercentage] = useState('5');
 
     const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -224,6 +224,7 @@ export default function AdminLeadsPage() {
             setBillingItemsList(lead.billing_items.map((it: any) => ({ 
                 description: it.description ?? '',
                 make: it.make ?? '',
+                qty: it.qty != null ? String(it.qty) : '1',
                 rate: it.rate != null ? String(it.rate) : ''
             })));
         } else {
@@ -232,6 +233,7 @@ export default function AdminLeadsPage() {
                 setBillingItemsList([{ 
                     description: lead.system_item || 'Solar Grid Tie System', 
                     make: lead.system_make || 'Standard', 
+                    qty: '1',
                     rate: String(lead.quotation_base_amount) 
                 }]);
             } else {
@@ -831,7 +833,7 @@ export default function AdminLeadsPage() {
                                                     <div className="flex items-center justify-between">
                                                         <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Bill Items</label>
                                                         <button 
-                                                            onClick={() => setBillingItemsList([...billingItemsList, { description: '', make: '', rate: '' }])}
+                                                            onClick={() => setBillingItemsList([...billingItemsList, { description: '', make: '', qty: '1', rate: '' }])}
                                                             className="flex items-center gap-1 text-[10px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-2 py-1 rounded"
                                                         >
                                                             <Plus size={10} /> Add Item
@@ -845,7 +847,7 @@ export default function AdminLeadsPage() {
                                                             <div key={idx} className="p-2 bg-white border border-slate-100 rounded-lg shadow-sm space-y-2">
                                                                 <div className="grid grid-cols-12 gap-2">
                                                                     {/* Description (inventory picker) */}
-                                                                    <div className="col-span-5">
+                                                                    <div className="col-span-4">
                                                                         <select
                                                                             value={item.description ?? ''}
                                                                             onChange={e => {
@@ -883,8 +885,24 @@ export default function AdminLeadsPage() {
                                                                         />
                                                                     </div>
 
+                                                                    {/* Qty */}
+                                                                    <div className="col-span-2">
+                                                                        <input
+                                                                            type="number"
+                                                                            value={item.qty ?? '1'}
+                                                                            onChange={e => {
+                                                                                const newList = [...billingItemsList];
+                                                                                newList[idx].qty = e.target.value;
+                                                                                setBillingItemsList(newList);
+                                                                            }}
+                                                                            placeholder="Qty"
+                                                                            min="1"
+                                                                            className="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                                                        />
+                                                                    </div>
+
                                                                     {/* Rate — admin enters their own amount */}
-                                                                    <div className="col-span-3">
+                                                                    <div className="col-span-2">
                                                                         <input
                                                                             type="number"
                                                                             value={item.rate ?? ''}
@@ -967,7 +985,7 @@ export default function AdminLeadsPage() {
                                                         <button 
                                                             disabled={updateLeadMut.isPending || billingItemsList.length === 0}
                                                             onClick={() => {
-                                                                const subtotal = billingItemsList.reduce((acc, it) => acc + (Number(it.rate) || 0), 0);
+                                                                const subtotal = billingItemsList.reduce((acc, it) => acc + (Number(it.rate) || 0) * (Number(it.qty) || 1), 0);
                                                                 const gstTotal = subtotal * ((Number(gstPercentage) || 0) / 100);
                                                                 const totalAmt = subtotal + gstTotal;
                                                                 const receiptAmt = totalAmt * ((Number(receiptPercentage) || 0) / 100);
@@ -981,7 +999,7 @@ export default function AdminLeadsPage() {
                                                                         quotation_gst_amount: gstTotal,
                                                                         quotation_total_amount: totalAmt,
                                                                         receipt_amount: Math.round(receiptAmt),
-                                                                        billing_items: billingItemsList.map(it => ({ ...it, rate: Number(it.rate) })),
+                                                                        billing_items: billingItemsList.map(it => ({ ...it, rate: Number(it.rate), qty: Number(it.qty) || 1 })),
                                                                         billing_gst_percentage: Number(gstPercentage) || 0
                                                                     }
                                                                 });
@@ -996,7 +1014,7 @@ export default function AdminLeadsPage() {
                                                 {billingItemsList.length > 0 && (
                                                     <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100 flex flex-wrap gap-x-6 gap-y-2 text-[10px] font-mono text-indigo-800">
                                                         {(() => {
-                                                            const subtotal = billingItemsList.reduce((acc, it) => acc + (Number(it.rate) || 0), 0);
+                                                            const subtotal = billingItemsList.reduce((acc, it) => acc + (Number(it.rate) || 0) * (Number(it.qty) || 1), 0);
                                                             const gstTotal = subtotal * ((Number(gstPercentage) || 0) / 100);
                                                             const totalAmt = subtotal + gstTotal;
                                                             return (

@@ -70,37 +70,35 @@ class LeadDocumentController extends Controller
 
         $annexureBStatuses = ['INSTALLATION_VERIFIED', 'POD_INSPECTION_INITIATED', 'POD_SUCCESSFUL', 'PROJECT_COMMISSIONING', 'SUBSIDY_REQUEST', 'SUBSIDY_APPLIED', 'SUBSIDY_DISBURSED', 'COMPLETED', 'LEAD_COMPLETED'];
         
-        if ($lead->status !== 'NEW') {
-            $finalData[] = [
-                'id' => 'virtual-quotation',
-                'document_type' => 'Pro Forma Quotation',
-                'original_filename' => 'Quotation-'.$lead->quotation_serial.'.pdf',
-                'created_at' => $lead->bill_date ?? $lead->created_at,
-                'download_url' => url('/api/v1/leads/'.$ulid.'/pdf/quotation'),
-                'is_virtual' => true,
-                'source' => 'system'
-            ];
-            $finalData[] = [
-                'id' => 'virtual-receipt',
-                'document_type' => 'Payment Receipt',
-                'original_filename' => 'Receipt-'.$lead->receipt_serial.'.pdf',
-                'created_at' => $lead->bill_date ?? $lead->created_at,
-                'download_url' => url('/api/v1/leads/'.$ulid.'/pdf/receipt'),
-                'is_virtual' => true,
-                'source' => 'system'
-            ];
-            $finalData[] = [
-                'id' => 'virtual-agreement',
-                'document_type' => 'Agreement (Annexure 2)',
-                'original_filename' => 'Agreement-'.$lead->ulid.'.html',
-                'created_at' => $lead->updated_at,
-                'download_url' => URL::temporarySignedRoute(
-                    'leads.agreement', now()->addMinutes(60), ['ulid' => $lead->ulid]
-                ),
-                'is_virtual' => true,
-                'source' => 'system'
-            ];
-        }
+        $finalData[] = [
+            'id' => 'virtual-quotation',
+            'document_type' => 'Pro Forma Quotation',
+            'original_filename' => 'Quotation-'.($lead->quotation_serial ?: '119').'.pdf',
+            'created_at' => $lead->bill_date ?? $lead->created_at,
+            'download_url' => url('/api/v1/leads/'.$ulid.'/pdf/quotation'),
+            'is_virtual' => true,
+            'source' => 'system'
+        ];
+        $finalData[] = [
+            'id' => 'virtual-receipt',
+            'document_type' => 'Payment Receipt',
+            'original_filename' => 'Receipt-'.($lead->receipt_serial ?: '299').'.pdf',
+            'created_at' => $lead->bill_date ?? $lead->created_at,
+            'download_url' => url('/api/v1/leads/'.$ulid.'/pdf/receipt'),
+            'is_virtual' => true,
+            'source' => 'system'
+        ];
+        $finalData[] = [
+            'id' => 'virtual-agreement',
+            'document_type' => 'Agreement (Annexure 2)',
+            'original_filename' => 'Agreement-'.$lead->ulid.'.html',
+            'created_at' => $lead->updated_at,
+            'download_url' => URL::temporarySignedRoute(
+                'leads.agreement', now()->addMinutes(60), ['ulid' => $lead->ulid]
+            ),
+            'is_virtual' => true,
+            'source' => 'system'
+        ];
 
         if (in_array($lead->status, $annexureBStatuses)) {
             $finalData[] = [

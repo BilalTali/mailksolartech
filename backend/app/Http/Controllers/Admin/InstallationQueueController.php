@@ -18,9 +18,37 @@ class InstallationQueueController extends Controller
 
     public function index(Request $request)
     {
+        $user = $request->user();
         $query = Lead::where('status', 'SOLAR_INSTALLED')
-            ->with(['assignedInstaller', 'assignedSurveyor', 'installationSubmissions'])
-            ->orderBy('updated_at', 'asc');
+            ->with([
+                'assignedInstaller', 
+                'assignedSurveyor', 
+                'installationSubmissions', 
+                'submittedByEnumerator:id,name,role,enumerator_id'
+            ]);
+
+        // ── RECURSIVE TEAM ISOLATION & HIERARCHY APPROVAL GATE ──
+        if (!$user->isSuperAdmin()) {
+            $managedIds = $user->getManagedUserIds();
+            $adminId = $user->isOperator() && $user->parent_id ? $user->parent_id : $user->id;
+            $query->where(function ($q) use ($user, $managedIds, $adminId) {
+                $q->where(function ($q2) use ($managedIds) {
+                    $q2->where('owner_type', 'admin_pool')
+                       ->where(function ($q3) use ($managedIds) {
+                           $q3->whereIn('created_by_super_agent_id', $managedIds)
+                              ->orWhereIn('submitted_by_agent_id', $managedIds)
+                              ->orWhereIn('submitted_by_enumerator_id', $managedIds)
+                              ->orWhereIn('assigned_agent_id', $managedIds)
+                              ->orWhereIn('assigned_super_agent_id', $managedIds)
+                              ->orWhereIn('assigned_admin_id', $managedIds);
+                       });
+                })
+                ->orWhere('assigned_admin_id', $adminId)
+                ->orWhere('wa_handler_admin_id', $adminId);
+            });
+        }
+
+        $query->orderBy('updated_at', 'asc');
 
         return response()->json([
             'success' => true,

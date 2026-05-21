@@ -31,6 +31,7 @@ class SuperAgentLeadController extends Controller
         $query = Lead::query()->visibleToSuperAgent($superAgent->id)
             ->with([
                 'assignedAgent', 'submittedByAgent', 'assignedSuperAgent',
+                'submittedByEnumerator:id,name,role,enumerator_id',
                 'documents',
                 'commissions'
             ]);
@@ -151,6 +152,7 @@ class SuperAgentLeadController extends Controller
         $superAgent = $request->user();
         $lead = Lead::query()->where(fn ($q) => $q->where('ulid', $ulid))->with([
             'assignedAgent', 'submittedByAgent', 'assignedSuperAgent',
+            'submittedByEnumerator:id,name,role,enumerator_id',
             'documents',
             'statusLogs.changedBy', 'commissions',
             'verifications.performedBy',

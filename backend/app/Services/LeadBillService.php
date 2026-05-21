@@ -103,8 +103,9 @@ class LeadBillService
             $billingItems = [
                 [
                     'description' => $lead->system_item ?: 'Monocrystalline DCR Module 550 Watt',
-                    'make' => $lead->system_make ?: 'Luminous/Exide/ServoTech',
-                    'rate' => $baseAmount
+                    'make'        => $lead->system_make ?: 'Luminous/Exide/ServoTech',
+                    'qty'         => 1,
+                    'rate'        => $baseAmount
                 ]
             ];
         }

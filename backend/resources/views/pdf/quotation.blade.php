@@ -211,9 +211,9 @@
                     <div style="font-weight: bold; font-size: 10.5pt; color: #1a1a1a;">{{ $it['description'] }}</div>
                     <div style="font-size: 7.5pt; color: #636E72; font-style: italic; margin-top: 2px;">Make/Brand: {{ $it['make'] ?? 'Standard' }}</div>
                 </td>
-                <td style="text-align: center;">01 Unit</td>
+                <td style="text-align: center;">{{ sprintf('%02d', $it['qty'] ?? 1) }} Unit</td>
                 <td style="text-align: right;"><img src="{{ $rupeeSvg }}" class="rupee-icon"> {{ number_format($it['rate'], 2) }}</td>
-                <td style="text-align: right;"><img src="{{ $rupeeSvg }}" class="rupee-icon"> {{ number_format($it['rate'], 2) }}</td>
+                <td style="text-align: right;"><img src="{{ $rupeeSvg }}" class="rupee-icon"> {{ number_format(($it['qty'] ?? 1) * $it['rate'], 2) }}</td>
             </tr>
             @endforeach
         </tbody>
