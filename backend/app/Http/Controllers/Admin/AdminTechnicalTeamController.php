@@ -18,11 +18,7 @@ class AdminTechnicalTeamController extends Controller
         $query = User::roleFieldTechnicalTeam();
 
         if (!$user->isSuperAdmin()) {
-            // Show technicians owned by this admin OR legacy ones with no parent (created before scoping)
-            $query->where(function ($q) use ($user) {
-                $q->where('parent_id', $user->id)
-                  ->orWhereNull('parent_id');
-            });
+            $query->where('parent_id', $user->id);
         }
 
         $technicians = $query->select(['id', 'name', 'email', 'mobile', 'status', 'technician_type', 'created_at'])
