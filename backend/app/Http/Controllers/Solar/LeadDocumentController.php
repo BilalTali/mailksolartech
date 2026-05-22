@@ -299,7 +299,7 @@ class LeadDocumentController extends Controller
         $vendor = (object) [
             'name' => \App\Models\Setting::getValue('company_name', 'Andleeb Solar'),
             'registered_address' => \App\Models\Setting::getValue('company_address', 'Registered Office'),
-            'signature' => \App\Models\Setting::getValue('company_signature')
+            'signature' => \App\Models\Setting::getValue('official_signature') ?: \App\Models\Setting::getValue('company_signature')
         ];
 
         $latestSubmission = \Illuminate\Support\Facades\DB::table('installation_submissions')
@@ -363,7 +363,7 @@ class LeadDocumentController extends Controller
         $vendor = (object) [
             'name' => \App\Models\Setting::getValue('company_name', 'Andleeb Solar'),
             'registered_address' => \App\Models\Setting::getValue('company_address', 'Registered Office'),
-            'signature' => \App\Models\Setting::getValue('company_signature')
+            'signature' => \App\Models\Setting::getValue('official_signature') ?: \App\Models\Setting::getValue('company_signature')
         ];
 
         $leadSignature = $this->getSignatureBase64($lead->consumer_signature_path);

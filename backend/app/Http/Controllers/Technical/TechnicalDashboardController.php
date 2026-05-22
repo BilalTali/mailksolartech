@@ -360,10 +360,26 @@ class TechnicalDashboardController extends Controller
         ];
 
         $recentActivity = LeadTechnicalVisit::where('technician_id', $user->id)
-            ->with('lead:id,ulid,beneficiary_name,beneficiary_mobile,beneficiary_address,beneficiary_district,beneficiary_state')
+            ->with([
+                'lead:id,ulid,beneficiary_name,beneficiary_mobile,beneficiary_address,beneficiary_district,beneficiary_state,submitted_by_agent_id,submitted_by_enumerator_id',
+                'lead.submittedByAgent:id,name,mobile',
+                'lead.submittedByEnumerator:id,name,mobile'
+            ])
             ->orderByDesc('created_at')
             ->limit(5)
-            ->get();
+            ->get()
+            ->map(function ($visit) {
+                $lead = $visit->lead;
+                if ($lead) {
+                    $creator = $lead->submittedByAgent
+                        ? ['name' => $lead->submittedByAgent->name, 'mobile' => $lead->submittedByAgent->mobile, 'role' => 'agent']
+                        : ($lead->submittedByEnumerator
+                            ? ['name' => $lead->submittedByEnumerator->name, 'mobile' => $lead->submittedByEnumerator->mobile, 'role' => 'enumerator']
+                            : null);
+                    $lead->setAttribute('lead_creator', $creator);
+                }
+                return $visit;
+            });
 
         return response()->json([
             'success' => true,

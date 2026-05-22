@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     Search, Filter, ChevronLeft, ChevronRight, X,
     Phone, MapPin, User, Hash, FileText, AlertCircle, Calendar,
-    Download, CheckCircle, Trash2, Plus
+    Download, CheckCircle, Trash2, Plus, CreditCard
 } from 'lucide-react';
 import { leadsApi } from '@/services/leads.api';
 import { adminSuperAgentApi } from '@/services/adminSuperAgent.api';
@@ -29,6 +29,12 @@ function fmt(iso: string) { return new Date(iso).toLocaleDateString('en-IN', { d
 // ── component ─────────────────────────────────────────────────────────────────
 export default function AdminLeadsPage() {
     const { role } = useAuthStore();
+    const getDisplayAccount = (account?: string | null) => {
+        if (!account) return '—';
+        if (role === 'admin' || role === 'super_admin') return account;
+        if (account.length <= 4) return account;
+        return '•'.repeat(account.length - 4) + account.slice(-4);
+    };
     const [search, setSearch] = useState('');
     const [status, setStatus] = useState('');
     const [source, setSource] = useState('');
@@ -636,6 +642,57 @@ export default function AdminLeadsPage() {
                                                 ))}
                                             </div>
                                         </section>
+
+                                        {/* ── Bank Details ── */}
+                                        <section>
+                                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                                                <CreditCard size={14} className="text-slate-400" /> Bank Details
+                                            </p>
+                                            <div className="space-y-2">
+                                                {[
+                                                    ['Bank Name', fullLead?.beneficiary_bank_name ?? '—'],
+                                                    ['Account Number', getDisplayAccount(fullLead?.beneficiary_bank_account)],
+                                                    ['IFSC Code', fullLead?.beneficiary_bank_ifsc ?? '—'],
+                                                    ['Branch', fullLead?.beneficiary_bank_branch ?? '—'],
+                                                ].map(([lbl, val]) => (
+                                                    <div key={lbl} className="flex gap-3 items-start">
+                                                        <span className="text-xs text-slate-600 w-28 shrink-0">{lbl}</span>
+                                                        <span className="text-xs font-medium text-slate-800 break-all">{val}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </section>
+
+                                        {/* ── Lead Creator Details ── */}
+                                        {fullLead && (fullLead.submitted_by_agent || fullLead.submitted_by_enumerator) && (
+                                            <section className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2">
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Lead Creator Details</p>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
+                                                        <User size={14} className="text-orange-600" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-xs font-semibold text-slate-700 truncate">
+                                                            {fullLead.submitted_by_agent?.name || fullLead.submitted_by_enumerator?.name}
+                                                        </p>
+                                                        <p className="text-[10px] text-slate-500 capitalize leading-none mt-0.5">
+                                                            Role: {fullLead.submitted_by_agent ? 'Agent' : 'Enumerator'}
+                                                        </p>
+                                                    </div>
+                                                    {(fullLead.submitted_by_agent?.mobile || fullLead.submitted_by_enumerator?.mobile) && (
+                                                        <a
+                                                            href={`tel:${fullLead.submitted_by_agent?.mobile || fullLead.submitted_by_enumerator?.mobile}`}
+                                                            className="flex items-center gap-1 px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-slate-700 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 transition-colors shrink-0"
+                                                        >
+                                                            <Phone size={11} className="text-slate-500" />
+                                                            <span className="text-[11px] font-bold">
+                                                                {fullLead.submitted_by_agent?.mobile || fullLead.submitted_by_enumerator?.mobile}
+                                                            </span>
+                                                        </a>
+                                                    )}
+                                                </div>
+                                            </section>
+                                        )}
 
                                         {/* ── System ── */}
                                         <section>
@@ -1294,6 +1351,10 @@ export default function AdminLeadsPage() {
                                                     <button
                                                         disabled={!newStatus || newStatus === fullLead?.status || statusMut.isPending}
                                                         onClick={() => {
+                                                            if (newStatus === 'REGISTERED') {
+                                                                setIsStatusModalOpen(true);
+                                                                return;
+                                                            }
                                                             const fd = new FormData();
                                                             fd.append('status', newStatus);
                                                             if (statusNote) fd.append('notes', statusNote);

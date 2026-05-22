@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/services/axios';
-import { ClipboardList, CheckCircle2, Clock, MapPin, Sun, LayoutDashboard, Banknote, Phone, Building2 } from 'lucide-react';
+import { ClipboardList, CheckCircle2, Clock, MapPin, Sun, LayoutDashboard, Banknote, Phone, Building2, UserCircle2 } from 'lucide-react';
 import { formatDate, formatCurrency } from '@/utils/formatters';
 import { useAuthStore } from '@/store/authStore';
 import DashboardSkeleton from '@/components/shared/DashboardSkeleton';
@@ -27,6 +27,11 @@ interface Activity {
         beneficiary_address?: string;
         beneficiary_district?: string;
         beneficiary_state?: string;
+        lead_creator?: {
+            name: string;
+            mobile: string;
+            role: string;
+        } | null;
     };
 }
 
@@ -134,7 +139,7 @@ export default function TechnicalDashboardPage() {
                                             {act.visit_type.replace('_', ' ')} • {act.lead.ulid.slice(-8)}
                                         </p>
                                         {/* Consumer contact details */}
-                                        <div className="mt-2 space-y-1">
+                                        <div className="mt-2 space-y-1.5">
                                             {act.lead.beneficiary_mobile && (
                                                 <a
                                                     href={`tel:${act.lead.beneficiary_mobile}`}
@@ -145,12 +150,39 @@ export default function TechnicalDashboardPage() {
                                                     <span className="text-[10px] font-bold">{act.lead.beneficiary_mobile}</span>
                                                 </a>
                                             )}
-                                            {(act.lead.beneficiary_district || act.lead.beneficiary_state) && (
-                                                <div className="flex items-center gap-1.5 text-slate-400">
-                                                    <Building2 size={10} />
-                                                    <span className="text-[10px] font-semibold">
-                                                        {[act.lead.beneficiary_district, act.lead.beneficiary_state].filter(Boolean).join(', ')}
+                                            {act.lead.beneficiary_address && (
+                                                <div className="flex items-start gap-1.5 text-slate-600">
+                                                    <Building2 size={10} className="shrink-0 mt-0.5 text-slate-400" />
+                                                    <span className="text-[10px] font-semibold leading-relaxed">
+                                                        {act.lead.beneficiary_address}
+                                                        {(act.lead.beneficiary_district || act.lead.beneficiary_state) && (
+                                                            <span className="text-slate-400 font-medium">
+                                                                {' • '}{[act.lead.beneficiary_district, act.lead.beneficiary_state].filter(Boolean).join(', ')}
+                                                            </span>
+                                                        )}
                                                     </span>
+                                                </div>
+                                            )}
+                                            {/* Lead Creator Contact */}
+                                            {act.lead.lead_creator && (
+                                                <div className="flex items-center gap-2 pt-1.5 mt-1.5 border-t border-slate-100" onClick={e => e.stopPropagation()}>
+                                                    <UserCircle2 className="text-violet-500" size={12} />
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 leading-none mb-0.5">
+                                                            Creator ({act.lead.lead_creator.role})
+                                                        </p>
+                                                        <p className="text-[10px] font-semibold text-slate-700 truncate">{act.lead.lead_creator.name}</p>
+                                                    </div>
+                                                    {act.lead.lead_creator.mobile && (
+                                                        <a
+                                                            href={`tel:${act.lead.lead_creator.mobile}`}
+                                                            onClick={e => e.stopPropagation()}
+                                                            className="flex items-center gap-1 px-2 py-0.5 bg-violet-50 border border-violet-200 rounded-lg text-violet-700 hover:bg-violet-500 hover:text-white hover:border-violet-500 transition-colors shrink-0"
+                                                        >
+                                                            <Phone size={8} />
+                                                            <span className="text-[9px] font-bold">{act.lead.lead_creator.mobile}</span>
+                                                        </a>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>

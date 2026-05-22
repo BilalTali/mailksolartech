@@ -24,8 +24,8 @@ class AdminLeadController extends Controller
         $query = Lead::query()->with([
             'assignedSuperAgent:id,name,role', 
             'assignedAgent:id,name,role', 
-            'submittedByAgent:id,name,role', 
-            'submittedByEnumerator:id,name,role,enumerator_id',
+            'submittedByAgent:id,name,role,mobile', 
+            'submittedByEnumerator:id,name,role,enumerator_id,mobile',
             'createdBySuperAgent:id,name,role', 
             'assignedSurveyor:id,name,role', 
             'assignedInstaller:id,name,role',
@@ -127,8 +127,8 @@ class AdminLeadController extends Controller
         $lead = Lead::query()->with([
             'assignedSuperAgent:id,name,role',
             'assignedAgent:id,name,role',
-            'submittedByAgent:id,name,role',
-            'submittedByEnumerator:id,name,role',
+            'submittedByAgent:id,name,role,mobile',
+            'submittedByEnumerator:id,name,role,mobile',
             'createdBySuperAgent:id,name,role',
             'verifiedBySuperAgent:id,name,role',
             'assignedSurveyor:id,name,role',

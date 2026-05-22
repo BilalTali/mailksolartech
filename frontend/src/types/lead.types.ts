@@ -98,6 +98,10 @@ export interface Lead {
     beneficiary_district: string;
     beneficiary_address: string | null;
     beneficiary_pincode: string | null;
+    beneficiary_bank_name?: string | null;
+    beneficiary_bank_account?: string | null;
+    beneficiary_bank_ifsc?: string | null;
+    beneficiary_bank_branch?: string | null;
 
     consumer_number: string | null;
     discom_name: string | null;

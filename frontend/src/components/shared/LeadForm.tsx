@@ -371,6 +371,11 @@ export default function LeadForm({ role, onSuccess }: LeadFormProps) {
             if (!aadhaarFront.file) { toast.error('Aadhaar Front is required'); return false; }
             if (!aadhaarBack.file) { toast.error('Aadhaar Back is required'); return false; }
             if (!electricityBill.file) { toast.error('Electricity bill is required'); return false; }
+            if (!pan.file) { toast.error('PAN Card is required'); return false; }
+            if (!photo.file) { toast.error('Beneficiary Photo is required'); return false; }
+            if (!solarRoofPhoto.file) { toast.error('Solar Roof Photo is required'); return false; }
+            if (!bankPassbook.file) { toast.error('Bank Passbook is required'); return false; }
+            if (!consumerSignature.file) { toast.error('Consumer Signature is required'); return false; }
             return true;
         }
         return true;
@@ -580,7 +585,7 @@ export default function LeadForm({ role, onSuccess }: LeadFormProps) {
                             <div className="px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-purple-50 to-white flex items-center gap-2">
                                 <Upload size={16} className="text-purple-500" />
                                 <h2 className="font-bold text-slate-700">Document Uploads</h2>
-                                <span className="ml-1 text-xs text-danger font-semibold">Aadhaar &amp; Electricity Bill required</span>
+                                <span className="ml-1 text-xs text-danger font-semibold">All 8 documents are required</span>
                             </div>
                             <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 <div className="relative">
@@ -595,11 +600,26 @@ export default function LeadForm({ role, onSuccess }: LeadFormProps) {
                                     <FileUploadBox label="Electricity Bill" accept=".jpg,.jpeg,.png,.pdf" icon={IndianRupee} value={electricityBill} onChange={setElectricityBill} />
                                     <span className="absolute top-0 right-0 text-danger font-bold text-xs mt-1 mr-1">*</span>
                                 </div>
-                                <FileUploadBox label="PAN Card" accept=".jpg,.jpeg,.png,.pdf" icon={FileText} value={pan} onChange={setPan} />
-                                <FileUploadBox label="Beneficiary Photo" accept=".jpg,.jpeg,.png" icon={User} value={photo} onChange={setPhoto} capture="user" />
-                                <FileUploadBox label="Solar Roof Photo" accept=".jpg,.jpeg,.png" icon={Zap} value={solarRoofPhoto} onChange={setSolarRoofPhoto} capture="environment" />
-                                <FileUploadBox label="Bank Passbook" accept=".jpg,.jpeg,.png,.pdf" icon={IndianRupee} value={bankPassbook} onChange={setBankPassbook} />
-                                <FileUploadBox label="Consumer Signature" accept=".jpg,.jpeg,.png,.pdf" icon={FileText} value={consumerSignature} onChange={setConsumerSignature} />
+                                <div className="relative">
+                                    <FileUploadBox label="PAN Card" accept=".jpg,.jpeg,.png,.pdf" icon={FileText} value={pan} onChange={setPan} />
+                                    <span className="absolute top-0 right-0 text-danger font-bold text-xs mt-1 mr-1">*</span>
+                                </div>
+                                <div className="relative">
+                                    <FileUploadBox label="Beneficiary Photo" accept=".jpg,.jpeg,.png" icon={User} value={photo} onChange={setPhoto} capture="user" />
+                                    <span className="absolute top-0 right-0 text-danger font-bold text-xs mt-1 mr-1">*</span>
+                                </div>
+                                <div className="relative">
+                                    <FileUploadBox label="Solar Roof Photo" accept=".jpg,.jpeg,.png" icon={Zap} value={solarRoofPhoto} onChange={setSolarRoofPhoto} capture="environment" />
+                                    <span className="absolute top-0 right-0 text-danger font-bold text-xs mt-1 mr-1">*</span>
+                                </div>
+                                <div className="relative">
+                                    <FileUploadBox label="Bank Passbook" accept=".jpg,.jpeg,.png,.pdf" icon={IndianRupee} value={bankPassbook} onChange={setBankPassbook} />
+                                    <span className="absolute top-0 right-0 text-danger font-bold text-xs mt-1 mr-1">*</span>
+                                </div>
+                                <div className="relative">
+                                    <FileUploadBox label="Consumer Signature" accept=".jpg,.jpeg,.png,.pdf" icon={FileText} value={consumerSignature} onChange={setConsumerSignature} />
+                                    <span className="absolute top-0 right-0 text-danger font-bold text-xs mt-1 mr-1">*</span>
+                                </div>
                             </div>
                         </div>
 

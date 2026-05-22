@@ -46,15 +46,15 @@ class StoreAgentLeadRequest extends FormRequest
             'aadhaar_back' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
             'electricity_bill' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
             'photo' => 'required|file|mimes:jpg,jpeg,png|max:5120',
-            'other' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
-            'solar_roof_photo' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
-            'bank_passbook' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
-            'consumer_signature' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'other' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'solar_roof_photo' => 'required|file|mimes:jpg,jpeg,png|max:5120',
+            'bank_passbook' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'consumer_signature' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
             // Bank Details (QW-2)
-            'beneficiary_bank_account' => 'nullable|string|max:255',
-            'beneficiary_bank_ifsc'    => 'nullable|string|max:20',
-            'beneficiary_bank_branch'  => 'nullable|string|max:100',
-            'beneficiary_bank_name'    => 'nullable|string|max:100',
+            'beneficiary_bank_account' => 'required|string|max:255',
+            'beneficiary_bank_ifsc'    => 'required|string|max:20',
+            'beneficiary_bank_branch'  => 'required|string|max:100',
+            'beneficiary_bank_name'    => 'required|string|max:100',
         ];
     }
 
