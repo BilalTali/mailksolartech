@@ -2,6 +2,7 @@ import { User } from './user.types';
 import { CommissionPrompt, Commission, LeadCommissionEntryStatus } from './commission.types';
 export type LeadStatus =
     | 'NEW'
+    | 'DOCUMENTS_FOR_REGISTRATION_COMPLETED'
     | 'REJECTED'
     | 'REGISTERED'
     | 'SURVEY_DONE'

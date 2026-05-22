@@ -19,8 +19,11 @@ class AdminInventoryController extends Controller
      */
     public function index(Request $request)
     {
+        $user = $request->user();
+        $adminId = $user->isOperator() && $user->parent_id ? $user->parent_id : $user->id;
+
         $stock = AdminInventory::with('inventoryItem')
-            ->where('admin_id', $request->user()->id)
+            ->where('admin_id', $adminId)
             ->orderBy('created_at', 'asc')
             ->get()
             ->map(fn($row) => [
@@ -42,8 +45,11 @@ class AdminInventoryController extends Controller
      */
     public function incomingStock(Request $request)
     {
+        $user = $request->user();
+        $adminId = $user->isOperator() && $user->parent_id ? $user->parent_id : $user->id;
+
         $pending = AdminStockDispatch::with(['superAdmin:id,name', 'items.inventoryItem'])
-            ->where('admin_id', $request->user()->id)
+            ->where('admin_id', $adminId)
             ->where('status', 'DISPATCHED_TO_ADMIN')
             ->latest('dispatched_at')
             ->get();
@@ -75,9 +81,12 @@ class AdminInventoryController extends Controller
             'notes'                             => 'nullable|string|max:1000',
         ]);
 
+        $user = $request->user();
+        $adminId = $user->isOperator() && $user->parent_id ? $user->parent_id : $user->id;
+
         /** @var \App\Models\AdminStockDispatch $dispatch */
         $dispatch = AdminStockDispatch::with('items')
-            ->where('admin_id', $request->user()->id)
+            ->where('admin_id', $adminId)
             ->findOrFail($id);
 
         // Guard: prevent double-confirmation

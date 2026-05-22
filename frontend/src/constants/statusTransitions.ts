@@ -15,6 +15,7 @@ import type { LeadStatus } from '@/types';
 // Full status set — admin/operator can reach any of these
 export const ALL_STATUSES: LeadStatus[] = [
     'NEW',
+    'DOCUMENTS_FOR_REGISTRATION_COMPLETED',
     'REJECTED',
     'REGISTERED',
     'SURVEY_DONE',

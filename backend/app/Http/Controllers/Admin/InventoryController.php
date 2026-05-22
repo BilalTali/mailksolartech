@@ -128,7 +128,10 @@ class InventoryController extends Controller
      */
     public function confirmReversion(Request $request, int $leadInventoryItemId)
     {
-        DB::transaction(function () use ($leadInventoryItemId, $request) {
+        $user = $request->user();
+        $adminId = $user->isOperator() && $user->parent_id ? $user->parent_id : $user->id;
+
+        DB::transaction(function () use ($leadInventoryItemId, $request, $adminId) {
             // Re-fetch with a row lock — prevents double-confirmation from concurrent requests
             $item = \App\Models\LeadInventoryItem::lockForUpdate()->findOrFail($leadInventoryItemId);
 
@@ -147,7 +150,7 @@ class InventoryController extends Controller
             //    so it returns there — NOT to the global SA inventory_items table.
             \App\Models\AdminInventory::firstOrCreate(
                 [
-                    'admin_id'          => $request->user()->id,
+                    'admin_id'          => $adminId,
                     'inventory_item_id' => $item->inventory_item_id,
                 ],
                 [
@@ -159,11 +162,11 @@ class InventoryController extends Controller
             );
 
             // Atomic increment — two counters updated to maintain ledger integrity
-            \App\Models\AdminInventory::where('admin_id', $request->user()->id)
+            \App\Models\AdminInventory::where('admin_id', $adminId)
                 ->where('inventory_item_id', $item->inventory_item_id)
                 ->increment('current_stock', $item->reverted_quantity);
 
-            \App\Models\AdminInventory::where('admin_id', $request->user()->id)
+            \App\Models\AdminInventory::where('admin_id', $adminId)
                 ->where('inventory_item_id', $item->inventory_item_id)
                 ->increment('total_reverted', $item->reverted_quantity);
         });

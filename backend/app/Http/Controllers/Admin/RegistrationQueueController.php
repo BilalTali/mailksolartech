@@ -69,8 +69,10 @@ class RegistrationQueueController extends Controller
         ]);
 
         $lead = Lead::where('ulid', $ulid)->firstOrFail();
+        $user = $request->user();
+        $adminId = $user->isOperator() && $user->parent_id ? $user->parent_id : $user->id;
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($request, $lead) {
+        \Illuminate\Support\Facades\DB::transaction(function () use ($request, $lead, $adminId) {
             $baseAmount = 0;
             $billingItems = [];
 
@@ -80,7 +82,7 @@ class RegistrationQueueController extends Controller
                 // ── Deduct from Admin's personal stock (not the global SA warehouse) ──
                 // Admin stock is sourced exclusively from Super Admin dispatches.
                 $adminStock = \App\Models\AdminInventory::lockForUpdate()
-                    ->where('admin_id', $request->user()->id)
+                    ->where('admin_id', $adminId)
                     ->where('inventory_item_id', $invItem->id)
                     ->first();
 

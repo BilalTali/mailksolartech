@@ -71,6 +71,7 @@ class AdminDashboardController extends Controller
     public function adminStats($user)
     {
         $isSuperAdmin = $user->isSuperAdmin();
+        $adminId = $isSuperAdmin ? null : ($user->isOperator() && $user->parent_id ? $user->parent_id : $user->id);
         $today = now()->startOfDay();
         $thisMonth = now()->startOfMonth();
 
@@ -79,7 +80,7 @@ class AdminDashboardController extends Controller
 
         $leadQuery = Lead::query();
         if (!$isSuperAdmin) {
-            $leadQuery->where(function ($q) use ($user, $managedIds) {
+            $leadQuery->where(function ($q) use ($user, $managedIds, $adminId) {
                 $q->where(function ($q2) use ($managedIds) {
                     $q2->where('owner_type', 'admin_pool')
                        ->where(function ($q3) use ($managedIds) {
@@ -91,8 +92,8 @@ class AdminDashboardController extends Controller
                               ->orWhereIn('assigned_admin_id', $managedIds);
                        });
                 })
-                ->orWhere('assigned_admin_id', $user->id)
-                ->orWhere('wa_handler_admin_id', $user->id);
+                ->orWhere('assigned_admin_id', $adminId)
+                ->orWhere('wa_handler_admin_id', $adminId);
             });
         }
 
@@ -133,7 +134,7 @@ class AdminDashboardController extends Controller
         // 3.5 Admin Profit Calculation
         // Formula: Net Profit = Commissions Received (payee_role=admin) + Ledger Credits
         //                     - Ledger Debits (expenses) - Commissions passed to downlines (entered_by admin)
-        $adminId = $isSuperAdmin ? null : $user->id;
+        // Note: $adminId is already resolved at the top of the function.
 
         $adminLedgerCredits = $isSuperAdmin
             ? \App\Models\AdminLedger::where('transaction_type', 'credit')->sum('amount')
@@ -169,7 +170,7 @@ class AdminDashboardController extends Controller
         $unassignedAgentsCount = User::query()->where('role', 'agent')
             ->where('status', 'active')
             ->whereNull('super_agent_id')
-            ->when(!$isSuperAdmin, fn($q) => $q->where('parent_id', $user->id)) // Only show their direct unassigned
+            ->when(!$isSuperAdmin, fn($q) => $q->where('parent_id', $adminId)) // Only show their direct unassigned
             ->count();
 
         // 5. Pipeline Funnel Counts
@@ -191,9 +192,9 @@ class AdminDashboardController extends Controller
         // 8. Inventory Stats
         $stockItemsCount = $isSuperAdmin
             ? InventoryItem::count()
-            : AdminInventory::where('admin_id', $user->id)->where('current_stock', '>', 0)->count();
+            : AdminInventory::where('admin_id', $adminId)->where('current_stock', '>', 0)->count();
 
-        $pendingReceiptsCount = $isSuperAdmin ? 0 : AdminStockDispatch::where('admin_id', $user->id)
+        $pendingReceiptsCount = $isSuperAdmin ? 0 : AdminStockDispatch::where('admin_id', $adminId)
             ->where('status', 'DISPATCHED_TO_ADMIN')->count();
 
         // 7. Daily Lead Trends (Last 14 Days)
