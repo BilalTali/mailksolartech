@@ -35,6 +35,8 @@ class TechnicalDashboardController extends Controller
             ->with([
                 'assignedSurveyor:id,name,mobile',
                 'assignedInstaller:id,name,mobile',
+                'submittedByAgent:id,name,mobile',
+                'submittedByEnumerator:id,name,mobile',
                 'technicalVisits',
                 'surveyRequirement',          // Surveyor material spec list
                 'inventoryItems.inventoryItem', // Dispatched materials from admin
@@ -96,6 +98,12 @@ class TechnicalDashboardController extends Controller
                         'dispatched_at' => $item->dispatched_at?->toDateString(),
                     ]),
                     'status_logs' => $lead->statusLogs,
+                    // ── Lead Creator (agent/enumerator who submitted) ───────
+                    'lead_creator' => $lead->submittedByAgent
+                        ? ['name' => $lead->submittedByAgent->name, 'mobile' => $lead->submittedByAgent->mobile, 'role' => 'agent']
+                        : ($lead->submittedByEnumerator
+                            ? ['name' => $lead->submittedByEnumerator->name, 'mobile' => $lead->submittedByEnumerator->mobile, 'role' => 'enumerator']
+                            : null),
                 ];
             });
 
@@ -352,7 +360,7 @@ class TechnicalDashboardController extends Controller
         ];
 
         $recentActivity = LeadTechnicalVisit::where('technician_id', $user->id)
-            ->with('lead:id,ulid,beneficiary_name')
+            ->with('lead:id,ulid,beneficiary_name,beneficiary_mobile,beneficiary_address,beneficiary_district,beneficiary_state')
             ->orderByDesc('created_at')
             ->limit(5)
             ->get();

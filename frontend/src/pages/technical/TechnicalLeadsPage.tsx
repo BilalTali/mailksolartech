@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     MapPin, CheckCircle, Loader2, ClipboardList, List,
-    PlayCircle, Navigation, AlertCircle, Send, X, Wrench, Calendar
+    PlayCircle, Navigation, AlertCircle, Send, X, Wrench, Calendar,
+    Phone, Building2, UserCircle2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -174,18 +175,73 @@ export default function TechnicalLeadsPage() {
                                     </div>
                                 </div>
 
-                                {/* Address */}
-                                <div className="p-4 space-y-3 flex-1 text-sm bg-white">
-                                    <div className="flex items-start gap-2">
-                                        <MapPin className="text-slate-400 shrink-0 mt-0.5" size={14} />
-                                        <span className="text-slate-600 line-clamp-2">
-                                            {lead.beneficiary_address || `${lead.beneficiary_district}, ${lead.beneficiary_state}`}
-                                        </span>
-                                    </div>
+                                {/* Consumer Contact & Address Details */}
+                                <div className="p-4 space-y-2.5 flex-1 text-sm bg-white">
+
+                                    {/* Phone */}
+                                    {lead.beneficiary_mobile && (
+                                        <a
+                                            href={`tel:${lead.beneficiary_mobile}`}
+                                            onClick={e => e.stopPropagation()}
+                                            className="flex items-center gap-2 group/phone hover:text-orange-600 transition-colors"
+                                        >
+                                            <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 group-hover/phone:bg-emerald-500 transition-colors">
+                                                <Phone className="text-emerald-600 group-hover/phone:text-white transition-colors" size={11} />
+                                            </div>
+                                            <span className="text-slate-700 font-semibold text-xs tracking-wide">{lead.beneficiary_mobile}</span>
+                                        </a>
+                                    )}
+
+                                    {/* Full Address */}
+                                    {lead.beneficiary_address && (
+                                        <div className="flex items-start gap-2">
+                                            <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center shrink-0 mt-0.5">
+                                                <MapPin className="text-indigo-500" size={11} />
+                                            </div>
+                                            <span className="text-slate-600 text-xs leading-relaxed">{lead.beneficiary_address}</span>
+                                        </div>
+                                    )}
+
+                                    {/* District & State */}
+                                    {(lead.beneficiary_district || lead.beneficiary_state) && (
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                                                <Building2 className="text-amber-500" size={11} />
+                                            </div>
+                                            <span className="text-slate-500 text-xs font-medium">
+                                                {[lead.beneficiary_district, lead.beneficiary_state].filter(Boolean).join(', ')}
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    {/* Lead Creator Contact */}
+                                    {(lead as any).lead_creator && (
+                                        <div className="flex items-center gap-2 pt-1 mt-1 border-t border-slate-100">
+                                            <div className="w-6 h-6 rounded-full bg-violet-100 flex items-center justify-center shrink-0">
+                                                <UserCircle2 className="text-violet-500" size={11} />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 leading-none mb-0.5">
+                                                    Lead Creator ({(lead as any).lead_creator.role})
+                                                </p>
+                                                <p className="text-xs font-semibold text-slate-700 truncate">{(lead as any).lead_creator.name}</p>
+                                            </div>
+                                            {(lead as any).lead_creator.mobile && (
+                                                <a
+                                                    href={`tel:${(lead as any).lead_creator.mobile}`}
+                                                    onClick={e => e.stopPropagation()}
+                                                    className="flex items-center gap-1 px-2 py-1 bg-violet-50 border border-violet-200 rounded-lg text-violet-700 hover:bg-violet-500 hover:text-white hover:border-violet-500 transition-colors shrink-0"
+                                                >
+                                                    <Phone size={10} />
+                                                    <span className="text-[10px] font-bold">{(lead as any).lead_creator.mobile}</span>
+                                                </a>
+                                            )}
+                                        </div>
+                                    )}
 
                                     {/* Support task context — show consumer complaint to technician */}
                                     {hasSupportTask && (
-                                        <div className="rounded-lg bg-rose-50 border border-rose-100 px-3 py-2">
+                                        <div className="rounded-lg bg-rose-50 border border-rose-100 px-3 py-2 mt-1">
                                             <p className="text-[10px] font-black uppercase tracking-widest text-rose-600 mb-1">Consumer Complaint</p>
                                             <p className="text-xs text-slate-600 line-clamp-2">
                                                 {(() => {

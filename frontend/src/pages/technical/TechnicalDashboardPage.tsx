@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/services/axios';
-import { ClipboardList, CheckCircle2, Clock, MapPin, Sun, LayoutDashboard, Banknote } from 'lucide-react';
+import { ClipboardList, CheckCircle2, Clock, MapPin, Sun, LayoutDashboard, Banknote, Phone, Building2 } from 'lucide-react';
 import { formatDate, formatCurrency } from '@/utils/formatters';
 import { useAuthStore } from '@/store/authStore';
 import DashboardSkeleton from '@/components/shared/DashboardSkeleton';
@@ -23,6 +23,10 @@ interface Activity {
     lead: {
         ulid: string;
         beneficiary_name: string;
+        beneficiary_mobile?: string;
+        beneficiary_address?: string;
+        beneficiary_district?: string;
+        beneficiary_state?: string;
     };
 }
 
@@ -119,18 +123,39 @@ export default function TechnicalDashboardPage() {
                                 <Link 
                                     key={act.id} 
                                     to={act.visit_type === 'site_survey' ? `/technical/leads/${act.lead.ulid}/survey` : `/technical/leads/${act.lead.ulid}/checklist`}
-                                    className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-white hover:border-orange-300 hover:shadow-md transition-all group"
+                                    className="flex items-start gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-white hover:border-orange-300 hover:shadow-md transition-all group"
                                 >
-                                    <div className={`p-3 rounded-xl transition-colors ${act.visit_type === 'site_survey' ? 'bg-orange-100 text-orange-600 group-hover:bg-orange-500 group-hover:text-white' : 'bg-emerald-100 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white'}`}>
+                                    <div className={`p-3 rounded-xl transition-colors shrink-0 mt-0.5 ${act.visit_type === 'site_survey' ? 'bg-orange-100 text-orange-600 group-hover:bg-orange-500 group-hover:text-white' : 'bg-emerald-100 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white'}`}>
                                         <MapPin size={20} />
                                     </div>
-                                    <div className="flex-1">
-                                        <p className="font-bold text-slate-800 text-sm group-hover:text-orange-600 transition-colors">{act.lead.beneficiary_name}</p>
-                                        <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest">
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-bold text-slate-800 text-sm group-hover:text-orange-600 transition-colors truncate">{act.lead.beneficiary_name}</p>
+                                        <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mt-0.5">
                                             {act.visit_type.replace('_', ' ')} • {act.lead.ulid.slice(-8)}
                                         </p>
+                                        {/* Consumer contact details */}
+                                        <div className="mt-2 space-y-1">
+                                            {act.lead.beneficiary_mobile && (
+                                                <a
+                                                    href={`tel:${act.lead.beneficiary_mobile}`}
+                                                    onClick={e => e.stopPropagation()}
+                                                    className="flex items-center gap-1.5 text-emerald-600 hover:text-emerald-700 transition-colors w-fit"
+                                                >
+                                                    <Phone size={10} />
+                                                    <span className="text-[10px] font-bold">{act.lead.beneficiary_mobile}</span>
+                                                </a>
+                                            )}
+                                            {(act.lead.beneficiary_district || act.lead.beneficiary_state) && (
+                                                <div className="flex items-center gap-1.5 text-slate-400">
+                                                    <Building2 size={10} />
+                                                    <span className="text-[10px] font-semibold">
+                                                        {[act.lead.beneficiary_district, act.lead.beneficiary_state].filter(Boolean).join(', ')}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="text-right">
+                                    <div className="text-right shrink-0">
                                         <p className="text-[10px] font-black text-slate-400 uppercase">{formatDate(act.created_at)}</p>
                                     </div>
                                 </Link>
