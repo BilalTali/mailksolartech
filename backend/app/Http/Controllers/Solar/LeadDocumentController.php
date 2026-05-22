@@ -43,7 +43,7 @@ class LeadDocumentController extends Controller
             $installationDocuments = \App\Models\InstallationDocument::where('installation_submission_id', $latestSubmission->id)->get();
             foreach ($installationDocuments as $doc) {
                 $url = URL::temporarySignedRoute(
-                    'api.v1.leads.installation-documents.signed-view',
+                    'leads.installation-documents.signed-view',
                     now()->addMinutes(120),
                     ['ulid' => $lead->ulid, 'id' => $doc->id, 'v' => time()]
                 );
