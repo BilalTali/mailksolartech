@@ -79,6 +79,8 @@ export interface User {
     created_by?: { name: string; code: string } | null;
     permissions?: string[] | null;
     parentAgent?: User;
+    createdBySuperAgent?: User;
+    parent?: User;
 }
 
 /** Minimal Business Development Manager reference for nested display */

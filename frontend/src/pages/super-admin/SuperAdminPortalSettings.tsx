@@ -262,9 +262,24 @@ export default function SuperAdminPortalSettings() {
                             <FileUploadField settingKey="company_favicon" label="Platform Favicon" accept="image/*" file={pendingFiles.company_favicon} url={localSettings.company_favicon} onSelect={(k, f) => setPendingFiles(p => ({...p, [k]: f}))} />
                             <FileUploadField settingKey="official_signature" label="Official Master Signature" accept="image/*" file={pendingFiles.official_signature} url={localSettings.official_signature} onSelect={(k, f) => setPendingFiles(p => ({...p, [k]: f}))} />
                         </div>
+
+                        <div className="pt-6 border-t border-slate-100 mt-6">
+                            <h3 className="text-sm font-black text-slate-800 mb-4 uppercase tracking-wider">Company Bank Details (Used in Invoice/Bill)</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <Field k="company_bank_account_name" label="Beneficiary Account Name" value={localSettings.company_bank_account_name || ''} onChange={handleInput} />
+                                <Field k="company_bank_account_number" label="Account Number" value={localSettings.company_bank_account_number || ''} onChange={handleInput} />
+                                <Field k="company_bank_ifsc" label="IFSC Code" value={localSettings.company_bank_ifsc || ''} onChange={handleInput} />
+                                <Field k="company_bank_branch" label="Bank & Branch Name" value={localSettings.company_bank_branch || ''} onChange={handleInput} />
+                            </div>
+                        </div>
+
                         <div className="flex justify-end pt-6 border-t border-slate-100">
                             <button 
-                                onClick={() => saveSection(['company_name', 'company_affiliated_with', 'company_email', 'company_phone', 'company_address', 'company_logo', 'company_favicon', 'official_signature'])} 
+                                onClick={() => saveSection([
+                                    'company_name', 'company_affiliated_with', 'company_email', 'company_phone', 'company_address', 
+                                    'company_logo', 'company_favicon', 'official_signature',
+                                    'company_bank_account_name', 'company_bank_account_number', 'company_bank_ifsc', 'company_bank_branch'
+                                ])} 
                                 disabled={isSaving}
                                 className={`flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >

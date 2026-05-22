@@ -109,7 +109,7 @@ class MonitoringController extends Controller
     public function enumerators(Request $request): JsonResponse
     {
         $query = User::query()->roleEnumerator()
-            ->with(['parentAgent'])
+            ->with(['parentAgent', 'createdBySuperAgent', 'parent'])
             ->withCount(['enumeratorLeads'])
             ->latest();
 
@@ -119,6 +119,33 @@ class MonitoringController extends Controller
         }
 
         return response()->json(['success' => true, 'data' => $query->paginate($request->per_page ?? 20)]);
+    }
+
+    /** Assign an independent / external enumerator to a specific Admin */
+    public function assignAdminToEnumerator(Request $request, int $id): JsonResponse
+    {
+        $request->validate(['admin_id' => 'required|exists:users,id']);
+
+        // Check if the user is an enumerator and currently unassigned
+        $enumerator = User::query()
+            ->roleEnumerator()
+            ->whereNull('parent_id')
+            ->whereNull('created_by_agent_id')
+            ->whereNull('created_by_super_agent_id')
+            ->findOrFail($id);
+
+        $admin = User::query()->roleAdmin()->findOrFail($request->admin_id);
+
+        // Assign the enumerator to the Admin
+        $enumerator->update([
+            'parent_id' => $admin->id
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Enumerator assigned to administrator successfully.',
+            'data' => $enumerator->fresh(['parent', 'parentAgent', 'createdBySuperAgent']),
+        ]);
     }
 
     /** Monitor Leads (Read-only) */

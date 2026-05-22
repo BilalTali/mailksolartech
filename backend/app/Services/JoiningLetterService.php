@@ -89,7 +89,7 @@ class JoiningLetterService
 
         $logoBase64 = $this->getBase64Image($logoPath, true);
         $logoBase64_2 = $this->getBase64Image($logoPath2, true);
-        $sigBase64 = $this->getBase64Image($signaturePath, false);
+        $sigBase64 = $adminId ? null : $this->getBase64Image($signaturePath, false);
         $sealBase64 = $this->getBase64Image($sealPath, false);
 
         // ── Legacy Setting Fetch for Other Text ────────────────────

@@ -490,6 +490,7 @@ $api->as('api.v1.')->group(function () {
             Route::get('/monitor/super-agents', [MonitoringController::class, 'superAgents']);
             Route::get('/monitor/agents',       [MonitoringController::class, 'agents']);
             Route::get('/monitor/enumerators',  [MonitoringController::class, 'enumerators']);
+            Route::put('/monitor/enumerators/{id}/assign-admin', [MonitoringController::class, 'assignAdminToEnumerator']);
             Route::get('/monitor/leads',        [MonitoringController::class, 'leads']);
             Route::put('/monitor/leads/{ulid}/assign-admin', [MonitoringController::class, 'assignAdmin']);
 

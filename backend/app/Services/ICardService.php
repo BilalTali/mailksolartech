@@ -54,7 +54,7 @@ class ICardService
         $adminSealPath = Setting::getValue('company_seal', null, $adminId, false);
         
         $logoBase64 = $this->getBase64Image($adminLogoPath);
-        $sigBase64 = $this->getBase64Image($adminSignaturePath);
+        $sigBase64 = $adminId ? null : $this->getBase64Image($adminSignaturePath);
         $sealBase64 = $this->getBase64Image($adminSealPath);
 
         // ── Global/Super Admin Branding (Back Side) ───────────────
