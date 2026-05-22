@@ -263,6 +263,7 @@ class LeadDocumentController extends Controller
     private function authorizeDocument($user, $lead)
     {
         $isAuthorized = $user->isAdmin() ||
+                        $user->isOperator() ||
                         ($user->id === (int) $lead->assigned_agent_id) ||
                         ($user->id === (int) $lead->assigned_super_agent_id) ||
                         ($user->id === (int) $lead->submitted_by_agent_id) ||
