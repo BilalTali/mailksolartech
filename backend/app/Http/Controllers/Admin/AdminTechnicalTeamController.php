@@ -15,10 +15,11 @@ class AdminTechnicalTeamController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+        $adminId = $user->isOperator() && $user->parent_id ? $user->parent_id : $user->id;
         $query = User::roleFieldTechnicalTeam();
 
         if (!$user->isSuperAdmin()) {
-            $query->where('parent_id', $user->id);
+            $query->where('parent_id', $adminId);
         }
 
         $technicians = $query->select(['id', 'name', 'email', 'mobile', 'status', 'technician_type', 'created_at'])
@@ -41,12 +42,15 @@ class AdminTechnicalTeamController extends Controller
             'technician_type' => 'required|in:surveyor,installer',
         ]);
 
+        $user = $request->user();
+        $adminId = $user->isOperator() && $user->parent_id ? $user->parent_id : $user->id;
+
         $technician = User::create([
             'name'            => $request->name,
             'email'           => $request->email,
             'mobile'          => $request->mobile,
             'technician_type' => $request->technician_type,
-            'parent_id'       => $request->user()->id,
+            'parent_id'       => $adminId,
         ]);
 
         $technician->role     = 'field_technical_team';
@@ -69,10 +73,11 @@ class AdminTechnicalTeamController extends Controller
         $request->validate(['status' => 'required|in:active,inactive']);
 
         $user = $request->user();
+        $adminId = $user->isOperator() && $user->parent_id ? $user->parent_id : $user->id;
         $query = User::roleFieldTechnicalTeam();
 
         if (!$user->isSuperAdmin()) {
-            $query->where('parent_id', $user->id);
+            $query->where('parent_id', $adminId);
         }
 
         $technician = $query->findOrFail($id);
@@ -92,10 +97,11 @@ class AdminTechnicalTeamController extends Controller
     public function destroy(Request $request, int $id)
     {
         $user = $request->user();
+        $adminId = $user->isOperator() && $user->parent_id ? $user->parent_id : $user->id;
         $query = User::roleFieldTechnicalTeam();
 
         if (!$user->isSuperAdmin()) {
-            $query->where('parent_id', $user->id);
+            $query->where('parent_id', $adminId);
         }
 
         $technician = $query->findOrFail($id);
