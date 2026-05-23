@@ -79,7 +79,9 @@ export interface User {
     created_by?: { name: string; code: string } | null;
     permissions?: string[] | null;
     parentAgent?: User;
+    parent_agent?: User;
     createdBySuperAgent?: User;
+    created_by_super_agent?: User;
     parent?: User;
 }
 

@@ -50,7 +50,7 @@ try {
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ]);
 
-    $stmt = $pdo->prepare("SELECT id, name, email, role, parent_id, created_by_agent_id, created_by_super_agent_id, enumerator_creator_role FROM users WHERE name LIKE '%Younis%'");
+    $stmt = $pdo->prepare("SELECT id, name, email, role, parent_id, created_by_agent_id, created_by_super_agent_id, enumerator_creator_role FROM users WHERE role = 'enumerator' ORDER BY id DESC LIMIT 25");
     $stmt->execute();
     $users = $stmt->fetchAll();
     
