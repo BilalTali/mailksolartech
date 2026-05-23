@@ -112,4 +112,35 @@ class SuperAgentEnumeratorController extends Controller
             'data'    => $user
         ]);
     }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'name'                  => 'required|string|max:255',
+            'mobile'                => ['required', 'string', 'size:10', 'regex:/^[6-9]\d{9}$/', new GloballyUniqueMobile($id)],
+            'email'                 => 'required|email|unique:users,email,' . $id,
+            'offer_point_threshold' => 'nullable|integer|min:0|max:200',
+        ]);
+
+        $saId = $request->user()->id;
+        $enum = \App\Models\User::query()->enumerators()->findOrFail($id);
+
+        $isCreatedBySA = ($enum->created_by_super_agent_id === $saId && $enum->enumerator_creator_role === 'super_agent');
+        $isCreatedByUnderAgent = false;
+        if ($enum->enumerator_creator_role === 'agent' && $enum->parentAgent) {
+            $isCreatedByUnderAgent = ($enum->parentAgent->super_agent_id === $saId);
+        }
+
+        if (!$isCreatedBySA && !$isCreatedByUnderAgent) {
+            abort(403, 'Unauthorized.');
+        }
+
+        $enum->update($request->only(['name', 'mobile', 'email', 'offer_point_threshold']));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Enumerator updated successfully.',
+            'data'    => $enum,
+        ]);
+    }
 }

@@ -53,8 +53,12 @@ export const agentEnumeratorApi = {
         const res = await api.get('/agent/enumerators');
         return res.data;
     },
-    create: async (data: { name: string; mobile: string }) => {
+    create: async (data: { name: string; mobile: string; email?: string; offer_point_threshold?: number }) => {
         const res = await api.post('/agent/enumerators', data);
+        return res.data;
+    },
+    update: async (id: number, data: { name: string; mobile: string; email?: string; offer_point_threshold?: number }) => {
+        const res = await api.put(`/agent/enumerators/${id}`, data);
         return res.data;
     },
     delete: async (id: number) => {
@@ -73,8 +77,12 @@ export const saEnumeratorApi = {
         const res = await api.get('/super-agent/enumerators');
         return res.data;
     },
-    create: async (data: { name: string; mobile: string; email?: string }) => {
+    create: async (data: { name: string; mobile: string; email?: string; offer_point_threshold?: number }) => {
         const res = await api.post('/super-agent/enumerators', data);
+        return res.data;
+    },
+    update: async (id: number, data: { name: string; mobile: string; email?: string; offer_point_threshold?: number }) => {
+        const res = await api.put(`/super-agent/enumerators/${id}`, data);
         return res.data;
     },
     updateStatus: async (id: number, status: string) => {
@@ -89,8 +97,12 @@ export const adminEnumeratorApi = {
         const res = await api.get('/admin/enumerators');
         return res.data;
     },
-    create: async (data: { name: string; mobile: string; email?: string }) => {
+    create: async (data: { name: string; mobile: string; email?: string; offer_point_threshold?: number }) => {
         const res = await api.post('/admin/enumerators', data);
+        return res.data;
+    },
+    update: async (id: number, data: { name: string; mobile: string; email?: string; offer_point_threshold?: number }) => {
+        const res = await api.put(`/admin/enumerators/${id}`, data);
         return res.data;
     },
     updateStatus: async (id: number, status: string) => {

@@ -118,4 +118,34 @@ class AdminEnumeratorController extends Controller
         $enum->update($updateData);
         return response()->json(['success' => true]);
     }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'name'                  => 'required|string|max:255',
+            'mobile'                => ['required', 'string', 'size:10', 'regex:/^[6-9]\d{9}$/', new GloballyUniqueMobile($id)],
+            'email'                 => 'required|email|unique:users,email,' . $id,
+            'offer_point_threshold' => 'nullable|integer|min:0|max:200',
+        ]);
+
+        $user = $request->user();
+        $enum = \App\Models\User::query()->enumerators()->findOrFail($id);
+
+        if (!$user->isSuperAdmin()) {
+            $managedIds = $user->getManagedUserIds();
+            if (!in_array($enum->parent_id, $managedIds) &&
+                !in_array($enum->created_by_agent_id, $managedIds) &&
+                !in_array($enum->created_by_super_agent_id, $managedIds)) {
+                abort(403, 'Unauthorized.');
+            }
+        }
+
+        $enum->update($request->only(['name', 'mobile', 'email', 'offer_point_threshold']));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Enumerator updated successfully.',
+            'data'    => $enum,
+        ]);
+    }
 }

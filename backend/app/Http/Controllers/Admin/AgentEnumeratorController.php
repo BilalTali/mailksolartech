@@ -63,4 +63,27 @@ class AgentEnumeratorController extends Controller
         $enum->update(['status' => $request->status]);
         return response()->json(['success' => true]);
     }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'name'                  => 'required|string|max:255',
+            'mobile'                => ['required', 'string', 'size:10', 'regex:/^[6-9]\d{9}$/', new GloballyUniqueMobile($id)],
+            'email'                 => 'required|email|unique:users,email,' . $id,
+            'offer_point_threshold' => 'nullable|integer|min:0|max:200',
+        ]);
+
+        $agent = $request->user();
+        $enum = \App\Models\User::query()->enumerators()
+            ->where('created_by_agent_id', $agent->id)
+            ->findOrFail($id);
+
+        $enum->update($request->only(['name', 'mobile', 'email', 'offer_point_threshold']));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Enumerator updated successfully.',
+            'data'    => $enum,
+        ]);
+    }
 }

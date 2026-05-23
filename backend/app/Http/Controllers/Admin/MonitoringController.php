@@ -126,12 +126,17 @@ class MonitoringController extends Controller
     {
         $request->validate(['admin_id' => 'required|exists:users,id']);
 
-        // Check if the user is an enumerator and currently unassigned
+        // Check if the user is an enumerator and originally from public (no Agent/Super Agent creator and creator role is not admin)
         $enumerator = User::query()
             ->roleEnumerator()
-            ->whereNull('parent_id')
-            ->whereNull('created_by_agent_id')
-            ->whereNull('created_by_super_agent_id')
+            ->where(function ($q) {
+                $q->whereNull('created_by_agent_id')
+                  ->whereNull('created_by_super_agent_id')
+                  ->where(function ($inner) {
+                      $inner->whereNull('enumerator_creator_role')
+                            ->orWhere('enumerator_creator_role', '!=', 'admin');
+                  });
+            })
             ->findOrFail($id);
 
         $admin = User::query()->roleAdmin()->findOrFail($request->admin_id);

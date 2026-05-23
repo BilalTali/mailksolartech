@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     Search, Users, CheckCircle, XCircle, Clock, Phone,
-    Eye, X, Plus, Shield, ShieldCheck, UserCheck
+    Eye, X, Plus, Shield, ShieldCheck, UserCheck, Edit
 } from 'lucide-react';
 import { adminEnumeratorApi } from '@/services/enumerator.api';
 import toast from 'react-hot-toast';
@@ -30,13 +30,37 @@ export default function AdminEnumeratorsPage() {
     const [statusFilter, setStatusFilter] = useState('');
     const [detailEnum, setDetailEnum] = useState<User | null>(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [editEnum, setEditEnum] = useState<User | null>(null);
     
     const [createForm, setCreateForm] = useState({
         name: '', mobile: '', email: '',
         offer_point_threshold: 10,
     });
 
+    const [editForm, setEditForm] = useState({
+        name: '', mobile: '', email: '',
+        offer_point_threshold: 10,
+        status: 'active'
+    });
+
     const qc = useQueryClient();
+
+    const editMut = useMutation({
+        mutationFn: ({ id, form }: { id: number; form: typeof editForm }) => 
+            adminEnumeratorApi.update(id, form),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['admin-enumerators'] });
+            toast.success('Enumerator updated successfully');
+            setEditEnum(null);
+            if (detailEnum?.id === editEnum?.id) {
+                setDetailEnum(null); // Close or refresh details
+            }
+        },
+        onError: (err: any) => {
+            const msg = err.response?.data?.message || err.response?.data?.error || 'Failed to update enumerator.';
+            toast.error(msg);
+        }
+    });
 
     // ── Fetch enumerators ───────────────────────────────────────────────
     const { data, isLoading } = useQuery<ApiResponse<User[]>>({
@@ -208,6 +232,21 @@ export default function AdminEnumeratorsPage() {
                                                     className="inline-flex items-center gap-1 text-xs text-slate-600 hover:text-slate-800 border border-slate-200 hover:border-slate-300 rounded-lg px-2 py-1 transition-colors"
                                                 >
                                                     <Eye size={12} /> View
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        setEditEnum(enumr);
+                                                        setEditForm({
+                                                            name: enumr.name,
+                                                            mobile: enumr.mobile,
+                                                            email: enumr.email ?? '',
+                                                            offer_point_threshold: enumr.offer_point_threshold ?? 10,
+                                                            status: enumr.status
+                                                        });
+                                                    }}
+                                                    className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 border border-indigo-200 hover:border-indigo-300 rounded-lg px-2 py-1 transition-colors bg-indigo-50/30"
+                                                >
+                                                    <Edit size={12} /> Edit
                                                 </button>
                                                 {enumr.status === 'pending' && (
                                                     <button
@@ -430,6 +469,105 @@ export default function AdminEnumeratorsPage() {
                                 </section>
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Modal */}
+            {editEnum && (
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+                        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                            <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                                <Edit size={16} className="text-slate-600" />
+                                Edit Enumerator
+                            </h3>
+                            <button
+                                onClick={() => setEditEnum(null)}
+                                className="text-slate-400 hover:text-slate-600 transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <form onSubmit={(e) => { e.preventDefault(); editMut.mutate({ id: editEnum.id, form: editForm }); }} className="p-5 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Full Name *</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={editForm.name}
+                                    onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 outline-none text-sm transition-shadow"
+                                    placeholder="Enter full name"
+                                />
+                            </div>
+
+                            <div>
+                                <MobileInput
+                                    label="Mobile Number *"
+                                    value={editForm.mobile}
+                                    onChange={(val) => setEditForm({ ...editForm, mobile: val })}
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Email <span className="text-red-500">*</span></label>
+                                <input
+                                    type="email"
+                                    required
+                                    value={editForm.email}
+                                    onChange={e => setEditForm({ ...editForm, email: e.target.value })}
+                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 outline-none text-sm transition-shadow"
+                                    placeholder="Enter email address"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Point Absorption Threshold
+                                    <span className="ml-1 text-slate-400 font-normal text-xs">(default 10)</span>
+                                </label>
+                                <input
+                                    type="number"
+                                    min={0}
+                                    max={200}
+                                    value={editForm.offer_point_threshold}
+                                    onChange={e => setEditForm({ ...editForm, offer_point_threshold: parseInt(e.target.value) || 0 })}
+                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 outline-none text-sm transition-shadow"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                                <select
+                                    value={editForm.status}
+                                    onChange={e => setEditForm({ ...editForm, status: e.target.value })}
+                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 outline-none text-sm transition-shadow"
+                                >
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                    <option value="pending">Pending</option>
+                                </select>
+                            </div>
+
+                            <div className="pt-4 flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setEditEnum(null)}
+                                    className="flex-1 px-4 py-2 border border-slate-200 text-slate-600 rounded-lg font-medium hover:bg-slate-50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={editMut.isPending || !editForm.name || editForm.mobile.length !== 10}
+                                    className="flex-1 px-4 py-2 bg-slate-800 text-white rounded-lg font-medium hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    {editMut.isPending ? 'Saving...' : 'Save Changes'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

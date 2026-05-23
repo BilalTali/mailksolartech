@@ -104,12 +104,24 @@ export default function SuperAdminMonitorEnumeratorsPage() {
                                 <tr key={enm.id} className="group hover:bg-slate-50/50 transition-colors">
                                     <td className="px-6 py-5">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 font-bold">
+                                            <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 font-bold shrink-0">
                                                 {enm.name.charAt(0)}
                                             </div>
                                             <div>
                                                 <p className="font-bold text-slate-900 leading-tight text-sm">{enm.name}</p>
-                                                <p className="text-[10px] text-emerald-600 font-extrabold uppercase tracking-widest">{enm.enumerator_id}</p>
+                                                <div className="flex flex-col sm:flex-row sm:items-center gap-x-2 gap-y-0.5 mt-0.5 text-slate-500">
+                                                    <span className="text-[10px] text-emerald-600 font-extrabold uppercase tracking-widest leading-none">{enm.enumerator_id || 'PENDING'}</span>
+                                                    {enm.mobile && (
+                                                        <span className="text-[11px] font-medium flex items-center gap-1 leading-none">
+                                                            <Phone className="w-2.5 h-2.5 text-slate-400" /> {enm.mobile}
+                                                        </span>
+                                                    )}
+                                                    {enm.email && (
+                                                        <span className="text-[11px] font-medium flex items-center gap-1 leading-none truncate max-w-[150px]">
+                                                            <Mail className="w-2.5 h-2.5 text-slate-400" /> {enm.email}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
@@ -126,11 +138,26 @@ export default function SuperAdminMonitorEnumeratorsPage() {
                                                 <span className="text-sm font-bold text-indigo-600 leading-tight">{enm.createdBySuperAgent.name}</span>
                                                 <span className="text-[10px] text-indigo-400 font-semibold uppercase tracking-tighter">{enm.createdBySuperAgent.super_agent_code}</span>
                                             </div>
-                                        ) : enm.parent && enm.parent.role === 'admin' ? (
+                                        ) : (enm.parent && enm.parent.role === 'admin' && enm.enumerator_creator_role === 'admin') ? (
                                             <div className="flex flex-col">
-                                                <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest mb-0.5">Admin</span>
+                                                <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest mb-0.5">Admin (Direct)</span>
                                                 <span className="text-sm font-bold text-emerald-600 leading-tight">{enm.parent.name}</span>
                                                 <span className="text-[10px] text-emerald-400 font-semibold tracking-tighter">{enm.parent.email}</span>
+                                            </div>
+                                        ) : (enm.parent && enm.parent.role === 'admin') ? (
+                                            <div className="flex flex-col">
+                                                <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest mb-0.5">Admin (Assigned)</span>
+                                                <span className="text-sm font-bold text-emerald-600 leading-tight">{enm.parent.name}</span>
+                                                <span className="text-[10px] text-emerald-400 font-semibold tracking-tighter">{enm.parent.email}</span>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setAssigningEnum(enm);
+                                                    }}
+                                                    className="mt-1.5 self-start inline-flex items-center gap-1 px-2.5 py-1 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-800 border border-slate-200 rounded-full text-[10px] font-black uppercase tracking-wider transition-all duration-300 shadow-sm cursor-pointer select-none"
+                                                >
+                                                    Reassign Admin
+                                                </button>
                                             </div>
                                         ) : (
                                             <div className="inline-block">
@@ -176,31 +203,35 @@ export default function SuperAdminMonitorEnumeratorsPage() {
                                                             </div>
 
                                                             <div className="space-y-2.5 mb-4">
-                                                                <a 
-                                                                    href={`tel:${enm.mobile}`} 
-                                                                    className="flex items-center gap-3 p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-100 rounded-xl transition-all group/item"
-                                                                >
-                                                                    <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
-                                                                        <Phone className="w-4 h-4" />
-                                                                    </div>
-                                                                    <div className="text-left">
-                                                                        <p className="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest leading-none mb-0.5">Mobile Number</p>
-                                                                        <p className="text-xs font-bold text-slate-800 group-hover/item:text-emerald-600 transition-colors leading-tight">{enm.mobile}</p>
-                                                                    </div>
-                                                                </a>
+                                                                {enm.mobile && (
+                                                                    <a 
+                                                                        href={`tel:${enm.mobile}`} 
+                                                                        className="flex items-center gap-3 p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-100 rounded-xl transition-all group/item"
+                                                                    >
+                                                                        <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+                                                                            <Phone className="w-4 h-4" />
+                                                                        </div>
+                                                                        <div className="text-left">
+                                                                            <p className="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest leading-none mb-0.5">Mobile Number</p>
+                                                                            <p className="text-xs font-bold text-slate-800 group-hover/item:text-emerald-600 transition-colors leading-tight">{enm.mobile}</p>
+                                                                        </div>
+                                                                    </a>
+                                                                )}
 
-                                                                <a 
-                                                                    href={`mailto:${enm.email}`} 
-                                                                    className="flex items-center gap-3 p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-100 rounded-xl transition-all group/item"
-                                                                >
-                                                                    <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
-                                                                        <Mail className="w-4 h-4" />
-                                                                    </div>
-                                                                    <div className="text-left max-w-[200px]">
-                                                                        <p className="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest leading-none mb-0.5">Email Address</p>
-                                                                        <p className="text-xs font-bold text-slate-800 group-hover/item:text-indigo-600 transition-colors truncate leading-tight">{enm.email}</p>
-                                                                    </div>
-                                                                </a>
+                                                                {enm.email && (
+                                                                    <a 
+                                                                        href={`mailto:${enm.email}`} 
+                                                                        className="flex items-center gap-3 p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-100 rounded-xl transition-all group/item"
+                                                                    >
+                                                                        <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
+                                                                            <Mail className="w-4 h-4" />
+                                                                        </div>
+                                                                        <div className="text-left max-w-[200px]">
+                                                                            <p className="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest leading-none mb-0.5">Email Address</p>
+                                                                            <p className="text-xs font-bold text-slate-800 group-hover/item:text-indigo-600 transition-colors truncate leading-tight">{enm.email}</p>
+                                                                        </div>
+                                                                    </a>
+                                                                )}
                                                             </div>
 
                                                             <button
