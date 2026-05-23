@@ -40,10 +40,23 @@ class LeadPolicy
 
     /**
      * Determine whether the user can update the model.
+     *
+     * Rules for non-admin roles:
+     *  - Editing is only allowed when the lead is NEW (just submitted, not yet processed)
+     *    OR REJECTED (reverted by admin — creator must fix and resubmit).
+     *  - Once admin advances the lead beyond NEW, the creator loses edit access until/unless
+     *    the admin reverts it to REJECTED.
+     *  - Super Admin, Admin, Operator: full access, unrestricted.
      */
     public function update(User $user, Lead $lead): bool
     {
+        // Admin / Operator: always permitted
         if ($user->isAdmin() || $user->isOperator()) return true;
+
+        // All lower roles: only editable when NEW or REJECTED (reverted)
+        if (!in_array($lead->status, ['NEW', 'REJECTED'], true)) {
+            return false;
+        }
 
         if ($user->isSuperAgent()) {
             return $lead->assigned_super_agent_id === $user->id || $lead->created_by_super_agent_id === $user->id;

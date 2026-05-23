@@ -354,6 +354,7 @@ $api->as('api.v1.')->group(function () {
             // Enumerators
             Route::apiResource('enumerators', \App\Http\Controllers\Admin\AdminEnumeratorController::class)->names('admin.enumerators');
             Route::put('/enumerators/{id}/status', [\App\Http\Controllers\Admin\AdminEnumeratorController::class, 'updateStatus']);
+            Route::put('/enumerators/{id}/assign', [\App\Http\Controllers\Admin\AdminEnumeratorController::class, 'assign']);
 
             // Operators (Admin-only management)
             Route::get('/operators', [AdminOperatorController::class, 'index']);

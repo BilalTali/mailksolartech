@@ -481,14 +481,70 @@ class Lead extends Model
     }
 
     /**
-     * Leads visible to a specific field technician:
-     * assigned stringently to them as either a surveyor or an installer
+     * Leads visible to a specific field technician, filtered by pipeline status.
+     *
+     * Visibility rules:
+     *  - Surveyor: sees the lead once it reaches REGISTERED (admin confirmed registration).
+     *    Statuses before that (NEW, DOCUMENTS_FOR_REGISTRATION_COMPLETED, REJECTED) are hidden.
+     *  - Installer: sees the lead once materials are being dispatched (DISPATCH_INITIATED).
+     *    They should not see the lead during survey / banking / disbursement phases.
      */
     public function scopeVisibleToTechnician(Builder $q, int $technicianId): Builder
     {
-        return $q->where(function ($query) use ($technicianId) {
-            $query->where(fn($q) => $q->where('assigned_surveyor_id', $technicianId))
-                ->orWhere(fn($q) => $q->where('assigned_installer_id', $technicianId));
+        // Statuses at which a surveyor's lead becomes visible (REGISTERED and all subsequent)
+        $surveyorVisibleStatuses = [
+            'REGISTERED',
+            'SURVEY_DONE',
+            'LEAD_DOCUMENTS_PRINTED',
+            'SIGNATURE_PENDING',
+            'SIGNATURE_DONE',
+            'FILE_DISBURSED',
+            'DISBURSEMENT_VERIFIED',
+            'DISPATCH_INITIATED',
+            'IN_TRANSIT',
+            'DELIVERED',
+            'MATERIAL_VERIFIED_BY_CONSUMER',
+            'INSTALLATION_SCHEDULED',
+            'INSTALLATION_IN_PROGRESS',
+            'SOLAR_INSTALLED',
+            'POD_INSPECTION_INITIATED',
+            'POD_REJECTED',
+            'POD_SUCCESSFUL',
+            'PROJECT_COMMISSIONING',
+            'SUBSIDY_REQUEST',
+            'SUBSIDY_DISBURSED',
+            'LEAD_COMPLETED',
+        ];
+
+        // Statuses at which an installer's lead becomes visible (DISPATCH_INITIATED and all subsequent)
+        $installerVisibleStatuses = [
+            'DISPATCH_INITIATED',
+            'IN_TRANSIT',
+            'DELIVERED',
+            'MATERIAL_VERIFIED_BY_CONSUMER',
+            'INSTALLATION_SCHEDULED',
+            'INSTALLATION_IN_PROGRESS',
+            'SOLAR_INSTALLED',
+            'POD_INSPECTION_INITIATED',
+            'POD_REJECTED',
+            'POD_SUCCESSFUL',
+            'PROJECT_COMMISSIONING',
+            'SUBSIDY_REQUEST',
+            'SUBSIDY_DISBURSED',
+            'LEAD_COMPLETED',
+        ];
+
+        return $q->where(function ($query) use ($technicianId, $surveyorVisibleStatuses, $installerVisibleStatuses) {
+            // Surveyor: assigned + lead is at or past REGISTERED
+            $query->where(function ($q) use ($technicianId, $surveyorVisibleStatuses) {
+                $q->where('assigned_surveyor_id', $technicianId)
+                  ->whereIn('status', $surveyorVisibleStatuses);
+            })
+            // Installer: assigned + lead is at or past DISPATCH_INITIATED
+            ->orWhere(function ($q) use ($technicianId, $installerVisibleStatuses) {
+                $q->where('assigned_installer_id', $technicianId)
+                  ->whereIn('status', $installerVisibleStatuses);
+            });
         });
     }
 

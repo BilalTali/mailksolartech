@@ -2,9 +2,12 @@
 
 namespace App\Services;
 
+use App\Models\AdminInventory;
 use App\Models\Lead;
+use App\Models\LeadInventoryItem;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Http\Requests\StoreInstallationDocumentsRequest;
 
 class InstallationService
@@ -17,7 +20,7 @@ class InstallationService
 
     public function submitChecklist(Lead $lead, User $installer, StoreInstallationDocumentsRequest $request): void
     {
-        \Illuminate\Support\Facades\Log::info('submitChecklist called', [
+        Log::info('submitChecklist called', [
             'lead' => $lead->ulid,
             'installer' => $installer->id,
             'has_files' => count($request->allFiles()),
@@ -78,16 +81,64 @@ class InstallationService
                 }
             }
 
-            // 3. Process Inventory Reconciliation
+            // 3. Process Inventory Reconciliation + Restock Admin Inventory for returns
             $reconciliation = json_decode($request->input('inventory_reconciliation'), true);
             if ($reconciliation && is_array($reconciliation)) {
                 foreach ($reconciliation as $leadItemId => $data) {
-                    \App\Models\LeadInventoryItem::where('id', $leadItemId)
+                    $revertedQty  = (int) ($data['reverted'] ?? 0);
+                    $consumedQty  = (int) ($data['consumed'] ?? 0);
+
+                    // Lock the lead item row to prevent concurrent double-credit
+                    /** @var LeadInventoryItem|null $leadItem */
+                    $leadItem = LeadInventoryItem::lockForUpdate()
+                        ->where('id', $leadItemId)
                         ->where('lead_id', $lead->id)
-                        ->update([
-                            'consumed_quantity' => $data['consumed'],
-                            'reverted_quantity' => $data['reverted'],
+                        ->first();
+
+                    if (!$leadItem) {
+                        Log::warning('InstallationService: LeadInventoryItem not found', ['id' => $leadItemId]);
+                        continue;
+                    }
+
+                    // Persist consumed/reverted quantities on the lead item
+                    $leadItem->update([
+                        'consumed_quantity' => $consumedQty,
+                        'reverted_quantity' => $revertedQty,
+                    ]);
+
+                    // ── Return reverted stock to admin's personal ledger ──────
+                    // The admin who dispatched the item is stored in `dispatched_by`.
+                    // We credit them back so they can reallocate the unused items.
+                    if ($revertedQty > 0 && $leadItem->dispatched_by) {
+                        AdminInventory::firstOrCreate(
+                            [
+                                'admin_id'          => $leadItem->dispatched_by,
+                                'inventory_item_id' => $leadItem->inventory_item_id,
+                            ],
+                            [
+                                'current_stock'  => 0,
+                                'total_received' => 0,
+                                'total_consumed' => 0,
+                                'total_reverted' => 0,
+                            ]
+                        );
+
+                        // Atomic increments — safe against concurrent checklist submissions
+                        AdminInventory::where('admin_id', $leadItem->dispatched_by)
+                            ->where('inventory_item_id', $leadItem->inventory_item_id)
+                            ->increment('current_stock', $revertedQty);
+
+                        AdminInventory::where('admin_id', $leadItem->dispatched_by)
+                            ->where('inventory_item_id', $leadItem->inventory_item_id)
+                            ->increment('total_reverted', $revertedQty);
+
+                        Log::info('InstallationService: stock returned to admin', [
+                            'admin_id'          => $leadItem->dispatched_by,
+                            'inventory_item_id' => $leadItem->inventory_item_id,
+                            'reverted_qty'      => $revertedQty,
+                            'lead_ulid'         => $lead->ulid,
                         ]);
+                    }
                 }
             }
 

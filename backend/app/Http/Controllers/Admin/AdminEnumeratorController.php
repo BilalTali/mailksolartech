@@ -115,8 +115,47 @@ class AdminEnumeratorController extends Controller
             $updateData['parent_id'] = $user->id;
         }
 
+        if ($request->status === 'active' && empty($enum->enumerator_id)) {
+            $updateData['enumerator_id'] = $this->agentService->generateEnumeratorId();
+        }
+
         $enum->update($updateData);
         return response()->json(['success' => true]);
+    }
+
+    public function assign(Request $request, $id)
+    {
+        $request->validate([
+            'parent_id' => 'required|exists:users,id'
+        ]);
+
+        $user = $request->user();
+        $enum = \App\Models\User::query()->enumerators()->findOrFail($id);
+        $parent = \App\Models\User::findOrFail($request->parent_id);
+
+        if (!in_array($parent->role, ['super_agent', 'agent', 'admin'])) {
+            return response()->json(['success' => false, 'message' => 'Invalid parent role.'], 400);
+        }
+
+        $updateData = [
+            'parent_id' => $parent->id,
+            'enumerator_creator_role' => $parent->role === 'admin' ? 'admin' : $parent->role,
+        ];
+
+        if ($parent->role === 'super_agent') {
+            $updateData['created_by_super_agent_id'] = $parent->id;
+            $updateData['created_by_agent_id'] = null;
+        } elseif ($parent->role === 'agent') {
+            $updateData['created_by_agent_id'] = $parent->id;
+            $updateData['created_by_super_agent_id'] = $parent->super_agent_id;
+        } else {
+            $updateData['created_by_super_agent_id'] = null;
+            $updateData['created_by_agent_id'] = null;
+        }
+
+        $enum->update($updateData);
+
+        return response()->json(['success' => true, 'message' => 'Enumerator assigned successfully.', 'data' => $enum]);
     }
 
     public function update(Request $request, $id)

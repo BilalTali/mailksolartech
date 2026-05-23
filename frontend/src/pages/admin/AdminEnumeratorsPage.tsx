@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     Search, Users, CheckCircle, XCircle, Clock, Phone,
-    Eye, X, Plus, Shield, ShieldCheck, UserCheck, Edit
+    Eye, X, Plus, Shield, ShieldCheck, UserCheck, Edit, UserPlus2, Link2
 } from 'lucide-react';
+import api from '@/services/axios';
 import { adminEnumeratorApi } from '@/services/enumerator.api';
 import toast from 'react-hot-toast';
 import type { User, ApiResponse } from '@/types';
@@ -31,6 +32,9 @@ export default function AdminEnumeratorsPage() {
     const [detailEnum, setDetailEnum] = useState<User | null>(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [editEnum, setEditEnum] = useState<User | null>(null);
+    const [assignEnum, setAssignEnum] = useState<User | null>(null);
+    const [assignParentId, setAssignParentId] = useState<string>('');
+    const [saSearch, setSaSearch] = useState('');
     
     const [createForm, setCreateForm] = useState({
         name: '', mobile: '', email: '',
@@ -58,6 +62,29 @@ export default function AdminEnumeratorsPage() {
         },
         onError: (err: any) => {
             const msg = err.response?.data?.message || err.response?.data?.error || 'Failed to update enumerator.';
+            toast.error(msg);
+        }
+    });
+
+    // ── Fetch super agents for assign dropdown ──────────────────────────
+    const { data: saData } = useQuery<any>({
+        queryKey: ['admin-super-agents-list'],
+        queryFn: () => api.get('/admin/super-agents', { params: { per_page: 100 } }).then(r => r.data),
+    });
+    const superAgents: any[] = saData?.data?.data ?? [];
+
+    // ── Assign mutation ──────────────────────────────────────────────────
+    const assignMut = useMutation({
+        mutationFn: ({ id, parentId }: { id: number; parentId: number }) =>
+            adminEnumeratorApi.assign(id, parentId),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['admin-enumerators'] });
+            toast.success('Enumerator assigned successfully.');
+            setAssignEnum(null);
+            setAssignParentId('');
+        },
+        onError: (err: any) => {
+            const msg = err.response?.data?.message || err.response?.data?.error || 'Failed to assign enumerator.';
             toast.error(msg);
         }
     });
@@ -117,7 +144,7 @@ export default function AdminEnumeratorsPage() {
         createMut.mutate(createForm);
     };
 
-    const isMutating = statusMut.isPending || createMut.isPending;
+    const isMutating = statusMut.isPending || createMut.isPending || assignMut.isPending;
 
     // ─────────────────────────────────────────────────────────────────────
     return (
@@ -210,9 +237,13 @@ export default function AdminEnumeratorsPage() {
                                                 <span className="inline-flex items-center gap-1 text-xs text-orange-700 bg-orange-50 px-2 py-0.5 rounded font-medium border border-orange-200">
                                                     <ShieldCheck size={11} /> SA: {enumr.created_by?.name || 'Unknown'}
                                                 </span>
-                                            ) : (
+                                            ) : enumr.enumerator_creator_role === 'agent' ? (
                                                 <span className="inline-flex items-center gap-1 text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded font-medium border border-blue-200">
                                                     <UserCheck size={11} /> Agent: {enumr.created_by?.name || 'Unknown'}
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1 text-xs text-purple-700 bg-purple-50 px-2 py-0.5 rounded font-medium border border-purple-200 font-semibold">
+                                                    <UserPlus2 size={11} /> Public (Unassigned)
                                                 </span>
                                             )}
                                         </td>
@@ -248,6 +279,18 @@ export default function AdminEnumeratorsPage() {
                                                 >
                                                     <Edit size={12} /> Edit
                                                 </button>
+                                                {(enumr.enumerator_creator_role !== 'super_agent' && enumr.enumerator_creator_role !== 'agent') && (
+                                                    <button
+                                                        onClick={() => {
+                                                            setAssignEnum(enumr);
+                                                            setAssignParentId('');
+                                                        }}
+                                                        disabled={isMutating}
+                                                        className="inline-flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 border border-purple-200 hover:border-purple-300 rounded-lg px-2 py-1 transition-colors bg-purple-50/30 disabled:opacity-50"
+                                                    >
+                                                        <UserPlus2 size={12} /> Assign
+                                                    </button>
+                                                )}
                                                 {enumr.status === 'pending' && (
                                                     <button
                                                         onClick={() => statusMut.mutate({ id: enumr.id, status: 'active' })}
@@ -568,6 +611,117 @@ export default function AdminEnumeratorsPage() {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Assign Modal */}
+            {assignEnum && (
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+                        {/* Header */}
+                        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 shrink-0">
+                            <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                                <UserPlus2 size={18} className="text-purple-600" />
+                                Assign to Super Agent
+                            </h3>
+                            <button
+                                onClick={() => { setAssignEnum(null); setSaSearch(''); }}
+                                className="text-slate-400 hover:text-slate-600 transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {/* Body */}
+                        <div className="p-5 flex-1 overflow-y-auto space-y-4">
+                            <div className="bg-purple-50 border border-purple-100 text-purple-900 rounded-lg p-3 text-xs leading-relaxed">
+                                You are assigning <strong>{assignEnum.name}</strong> ({assignEnum.mobile}) to a Super Agent. Future leads submitted by this enumerator will be managed by the selected Super Agent.
+                            </div>
+
+                            {/* Search Input */}
+                            <div className="relative">
+                                <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
+                                <input
+                                    type="text"
+                                    value={saSearch}
+                                    onChange={(e) => setSaSearch(e.target.value)}
+                                    placeholder="Search Super Agents by name, code..."
+                                    className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-sm transition-shadow"
+                                />
+                            </div>
+
+                            {/* Super Agent List */}
+                            <div className="border border-slate-100 rounded-lg overflow-hidden divide-y divide-slate-100 max-h-60 overflow-y-auto">
+                                {(() => {
+                                    const filtered = superAgents.filter((sa: any) =>
+                                        sa.name.toLowerCase().includes(saSearch.toLowerCase()) ||
+                                        (sa.super_agent_code && sa.super_agent_code.toLowerCase().includes(saSearch.toLowerCase())) ||
+                                        sa.mobile.includes(saSearch)
+                                    );
+
+                                    if (filtered.length === 0) {
+                                        return (
+                                            <div className="p-8 text-center text-slate-400 text-sm">
+                                                No Super Agents found matching "{saSearch}"
+                                            </div>
+                                        );
+                                    }
+
+                                    return filtered.map((sa: any) => {
+                                        const isSelected = assignParentId === sa.id.toString();
+                                        return (
+                                            <button
+                                                key={sa.id}
+                                                type="button"
+                                                onClick={() => setAssignParentId(sa.id.toString())}
+                                                className={`w-full px-4 py-3 flex items-center justify-between text-left transition-colors hover:bg-slate-50 ${
+                                                    isSelected ? 'bg-purple-50 hover:bg-purple-50 border-l-4 border-purple-600 pl-3' : ''
+                                                }`}
+                                            >
+                                                <div>
+                                                    <p className="font-semibold text-slate-800 text-sm">{sa.name}</p>
+                                                    <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
+                                                        <Phone size={10} /> {sa.mobile}
+                                                    </p>
+                                                </div>
+                                                {sa.super_agent_code && (
+                                                    <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${
+                                                        isSelected ? 'bg-purple-200 text-purple-800' : 'bg-slate-100 text-slate-600'
+                                                    }`}>
+                                                        {sa.super_agent_code}
+                                                    </span>
+                                                )}
+                                            </button>
+                                        );
+                                    });
+                                })()}
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="px-5 py-4 border-t border-slate-100 flex gap-3 bg-slate-50/50 shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => { setAssignEnum(null); setSaSearch(''); }}
+                                className="flex-1 px-4 py-2 border border-slate-200 text-slate-600 rounded-lg font-medium hover:bg-slate-50 transition-colors text-sm"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => assignMut.mutate({ id: assignEnum.id, parentId: parseInt(assignParentId) })}
+                                disabled={assignMut.isPending || !assignParentId}
+                                className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center gap-1.5"
+                            >
+                                {assignMut.isPending ? 'Assigning...' : (
+                                    <>
+                                        <Link2 size={16} />
+                                        Confirm Assignment
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

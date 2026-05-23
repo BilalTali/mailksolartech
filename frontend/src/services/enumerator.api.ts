@@ -109,4 +109,8 @@ export const adminEnumeratorApi = {
         const res = await api.put(`/admin/enumerators/${id}/status`, { status });
         return res.data;
     },
+    assign: async (id: number, parentId: number) => {
+        const res = await api.put(`/admin/enumerators/${id}/assign`, { parent_id: parentId });
+        return res.data;
+    },
 };
