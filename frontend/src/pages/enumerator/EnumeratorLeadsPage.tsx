@@ -131,7 +131,7 @@ export default function EnumeratorLeadsPage() {
                     <table className="min-w-full text-sm" aria-label="My Submitted Leads">
                         <thead className="bg-slate-50 border-b border-slate-200">
                             <tr>
-                                {['Ref', 'Beneficiary', 'Mobile', 'District', 'Capacity', 'Verification', 'Status', 'Date', 'Documents'].map(h => (
+                                {['Ref', 'Beneficiary', 'Mobile', 'District', 'Capacity', 'Category', 'Verification', 'Status', 'Date', 'Documents'].map(h => (
                                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">
                                         {h}
                                     </th>
@@ -150,6 +150,7 @@ export default function EnumeratorLeadsPage() {
                                     <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{lead.beneficiary_mobile}</td>
                                     <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{lead.beneficiary_district}</td>
                                     <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{lead.system_capacity?.replace(/_/g, ' ') || '—'}</td>
+                                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{lead.category || '—'}</td>
                                     <td className="px-4 py-3 whitespace-nowrap">
                                         <VerificationStatusBadge status={lead.verification_status} revertCount={lead.revert_count} />
                                     </td>

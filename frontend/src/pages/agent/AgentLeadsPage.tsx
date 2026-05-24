@@ -148,7 +148,7 @@ export default function AgentLeadsPage() {
                             <tr>
                                 {[
                                     'Lead Ref', 'Beneficiary', 'Submitted By', 'Mobile', 'State', 'District',
-                                    'DISCOM', 'Consumer No.', 'Capacity', 'Roof Size', 'Monthly Bill',
+                                    'DISCOM', 'Consumer No.', 'Capacity', 'Roof Size', 'Monthly Bill', 'Category',
                                     'Commission', 'Pay Status', 'Verification', 'Status', 'Date', 'Action'
                                 ].map(h => (
                                     <th key={h} scope="col" className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide whitespace-nowrap">
@@ -206,6 +206,7 @@ export default function AgentLeadsPage() {
                                         <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{lead.system_capacity?.replace(/_/g, ' ') || '—'}</td>
                                         <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{lead.roof_size?.replace(/_/g, ' ') || '—'}</td>
                                         <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{lead.monthly_bill_amount ? `₹${lead.monthly_bill_amount}` : '—'}</td>
+                                        <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{lead.category || '—'}</td>
 
 
                                         <td className="px-4 py-3 whitespace-nowrap text-slate-700 font-bold text-center">

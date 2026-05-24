@@ -68,7 +68,7 @@ class AdminManagementController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => 'string|max:255',
-            'email' => ['email', Rule::unique('users')->ignore($admin->id)],
+            'email' => ['required', 'email', Rule::unique('users')->ignore($admin->id)],
             'mobile' => ['string', 'size:10', Rule::unique('users')->ignore($admin->id)],
             'password' => 'nullable|string|min:8',
             'status' => 'in:active,inactive',

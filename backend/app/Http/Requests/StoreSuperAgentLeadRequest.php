@@ -17,7 +17,7 @@ class StoreSuperAgentLeadRequest extends FormRequest
             // Beneficiary Info
             'beneficiary_name' => 'required|string|max:255',
             'beneficiary_mobile' => 'required|string|size:10|regex:/^[6-9]\d{9}$/',
-            'beneficiary_email' => 'nullable|email',
+            'beneficiary_email' => 'required|email|max:255',
             'beneficiary_state' => 'required|string|max:255',
             'beneficiary_district' => 'required|string|max:255',
             'beneficiary_address' => 'required|string',

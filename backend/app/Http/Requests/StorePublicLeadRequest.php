@@ -17,7 +17,7 @@ class StorePublicLeadRequest extends FormRequest
         return [
             'beneficiary_name' => 'required|string|max:255',
             'beneficiary_mobile' => 'required|string|size:10|regex:/^[6-9]\d{9}$/',
-            'beneficiary_email' => 'nullable|email|max:255',
+            'beneficiary_email' => 'required|email|max:255',
             'beneficiary_state' => ['required', 'string', Rule::in(['Jammu & Kashmir', 'Ladakh'])],
             'beneficiary_district' => ['required', 'string', Rule::in([
                 'Srinagar', 'Baramulla', 'Anantnag', 'Pulwama', 'Kupwara', 'Budgam',

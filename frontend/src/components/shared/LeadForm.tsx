@@ -376,6 +376,8 @@ export default function LeadForm({ role, onSuccess }: LeadFormProps) {
         if (step === 1) {
             if (!form.beneficiary_name) { toast.error('Full Name is required'); return false; }
             if (!form.beneficiary_mobile.match(/^[6-9]\d{9}$/)) { toast.error('Enter a valid 10-digit Indian mobile number'); return false; }
+            if (!form.beneficiary_email) { toast.error('Email Address is required'); return false; }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.beneficiary_email)) { toast.error('Enter a valid email address'); return false; }
             return true;
         }
         if (step === 2) {
@@ -518,7 +520,7 @@ export default function LeadForm({ role, onSuccess }: LeadFormProps) {
                                 placeholder="98765 43210"
                             />
                             <div className="md:col-span-2">
-                                <Field label="Email Address" name="beneficiary_email" value={form.beneficiary_email} onChange={set} type="email" placeholder="citizen@gmail.com" autoComplete="email" />
+                                <Field label="Email Address" name="beneficiary_email" value={form.beneficiary_email} onChange={set} type="email" placeholder="citizen@gmail.com" required autoComplete="email" />
                             </div>
 
                             {role === 'public' && (

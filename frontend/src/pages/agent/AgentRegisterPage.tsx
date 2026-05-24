@@ -120,7 +120,7 @@ export default function AgentRegisterPage() {
                                     {...register('email')} 
                                     type="email"
                                     className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-slate-800 font-bold focus:border-slate-300 outline-none transition-all placeholder:text-slate-300 placeholder:font-medium text-sm" 
-                                    placeholder="Optional" 
+                                    placeholder="your.email@example.com" 
                                 />
                                 {errors.email && <p className="text-red-500 text-xs font-semibold ml-1">{errors.email.message}</p>}
                             </div>

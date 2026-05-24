@@ -197,6 +197,13 @@ export function SuperAgentLeadDetailPage() {
                                 </div>
                             </div>
                             <div className="flex gap-3">
+                                <AlertCircle size={16} className="text-slate-500 shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="text-xs text-slate-600">Category</p>
+                                    <p className="font-medium text-slate-800">{lead.category || '—'}</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-3">
                                 <MapPin size={16} className="text-slate-500 shrink-0 mt-0.5" />
                                 <div>
                                     <p className="text-xs text-slate-600">Roof Size</p>

@@ -365,7 +365,7 @@ export default function AdminLeadsPage() {
                             <tr>
                                 {[
                                     'Ref', 'Beneficiary', 'Mobile', 'Referral ID', 'State', 'District', 'Address',
-                                    'DISCOM', 'Consumer No.', 'Capacity', 'Roof Size', 'Monthly Bill',
+                                    'DISCOM', 'Consumer No.', 'Capacity', 'Roof Size', 'Monthly Bill', 'Category',
                                     'Source', 'Business Development Manager', 'Business Development Executive', 'Status', 'Receipt', 'Date', 'Action'
                                 ].map(h => (
                                     <th key={h} scope="col" className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide whitespace-nowrap">{h}</th>
@@ -400,6 +400,7 @@ export default function AdminLeadsPage() {
                                     <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{lead.system_capacity?.replace(/_/g, ' ') || '—'}</td>
                                     <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{lead.roof_size?.replace(/_/g, ' ') || '—'}</td>
                                     <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{lead.monthly_bill_amount ? `₹${lead.monthly_bill_amount}` : '—'}</td>
+                                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{lead.category || '—'}</td>
                                     <td className="px-4 py-3">
                                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tight ${
                                             lead.source === 'public_form'
@@ -737,6 +738,7 @@ export default function AdminLeadsPage() {
                                                         />
                                                     )],
                                                     ['Monthly Bill', fullLead?.monthly_bill_amount ? `₹${fullLead.monthly_bill_amount}` : '—'],
+                                                    ['Category', fullLead?.category ?? '—'],
                                                     ['Govt. App No.', fullLead?.govt_application_number ?? '—'],
                                                     ['Business Development Manager Comm.', fullLead?.formatted_commissions?.super_agent_commission?.amount ? `₹${fullLead.formatted_commissions.super_agent_commission.amount}` : '—'],
                                                     ['Business Development Executive Comm.', fullLead?.formatted_commissions?.agent_commission?.amount ? `₹${fullLead.formatted_commissions.agent_commission.amount}` : '—'],

@@ -171,7 +171,7 @@ export default function SuperAgentLeadsPage() {
                             <tr>
                                 {[
                                     'Lead Ref', 'Beneficiary', 'Source', 'Verification',
-                                    'Mobile', 'District', 'DISCOM', 'Consumer No.',
+                                    'Mobile', 'District', 'DISCOM', 'Consumer No.', 'Category',
                                     'Manager', 'Executive / Enumerator', 'Status', 'Date', 'Action'
                                 ].map(h => (
                                     <th key={h} scope="col" className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide whitespace-nowrap">
@@ -216,6 +216,7 @@ export default function SuperAgentLeadsPage() {
                                                 <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{lead.beneficiary_district}</td>
                                                 <td className="px-4 py-3 text-slate-800 whitespace-nowrap">{lead.discom_name || '—'}</td>
                                                 <td className="px-4 py-3 text-slate-600 font-mono whitespace-nowrap">{lead.consumer_number || '—'}</td>
+                                                <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{lead.category || '—'}</td>
                                                 <td className="px-4 py-3 text-slate-600 whitespace-nowrap text-xs">
                                                     {lead.submitted_by_enumerator?.enumerator_creator_role === 'admin' ? (
                                                         <span className="text-emerald-700 font-semibold italic text-xs uppercase tracking-tighter">Direct Settlement</span>
