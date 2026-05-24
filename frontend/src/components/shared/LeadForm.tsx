@@ -40,6 +40,21 @@ const DEFAULT_OPTIONS = {
         { value: '100_200', label: '100 – 200 sq ft' },
         { value: '200_300', label: '200 – 300 sq ft' },
         { value: '300_plus', label: '300+ sq ft' },
+    ],
+    system_capacity: [
+        { value: '1kw', label: '1 kW' },
+        { value: '2kw', label: '2 kW' },
+        { value: '3kw', label: '3 kW' },
+        { value: '3.3kw', label: '3.3 kW' },
+        { value: '4kw', label: '4 kW' },
+        { value: '5kw', label: '5 kW' },
+        { value: '5.5kw', label: '5.5 kW' },
+        { value: '6kw', label: '6 kW' },
+        { value: '7kw', label: '7 kW' },
+        { value: '8kw', label: '8 kW' },
+        { value: '9kw', label: '9 kW' },
+        { value: '10kw', label: '10 kW' },
+        { value: 'above_10kw', label: 'Above 10 kW' },
     ]
 };
 
@@ -263,6 +278,7 @@ export default function LeadForm({ role, onSuccess }: LeadFormProps) {
         monthly_bill_amount: '',
         roof_size: '',
         system_capacity: '',
+        category: '',
         query_message: '',
         referral_agent_id: '',
         beneficiary_bank_account: '',
@@ -296,7 +312,15 @@ export default function LeadForm({ role, onSuccess }: LeadFormProps) {
         return DEFAULT_OPTIONS[category as keyof typeof DEFAULT_OPTIONS] || [];
     };
 
-    const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+    const set = (k: string, v: string) => {
+        setForm(f => {
+            const next = { ...f, [k]: v };
+            if (k === 'beneficiary_state') {
+                next.beneficiary_district = '';
+            }
+            return next;
+        });
+    };
 
     // URL Pre-fill for referral ID
     React.useEffect(() => {
@@ -334,12 +358,15 @@ export default function LeadForm({ role, onSuccess }: LeadFormProps) {
         },
         onError: (err: any) => {
             const errors = err.response?.data?.errors;
+            const message = err.response?.data?.message || err.response?.data?.error;
             if (errors) {
-                const first = Object.values(errors)[0] as string[];
-                toast.error(first?.[0] ?? 'Validation error occurred.');
-            } else {
-                toast.error(err.response?.data?.message ?? err.message ?? 'Failed to submit lead.');
+                const errorList = Object.values(errors).flatMap((e: any) => Array.isArray(e) ? e : [e]);
+                if (errorList.length > 0) {
+                    toast.error(errorList[0]);
+                    return;
+                }
             }
+            toast.error(message ?? err.message ?? 'Failed to submit lead.');
         }
     });
 
@@ -355,18 +382,26 @@ export default function LeadForm({ role, onSuccess }: LeadFormProps) {
             if (!form.beneficiary_state) { toast.error('State is required'); return false; }
             if (!form.beneficiary_district) { toast.error('District is required'); return false; }
             if (!form.beneficiary_address) { toast.error('Full Address is required'); return false; }
-            if (form.beneficiary_pincode.length !== 6) { toast.error('Pincode must be 6 digits'); return false; }
+            if (!/^\d{6}$/.test(form.beneficiary_pincode)) { toast.error('Pincode must be exactly 6 digits'); return false; }
             return true;
         }
         if (step === 3) {
             if (!form.consumer_number) { toast.error('Consumer Number is required'); return false; }
             if (!form.discom_name) { toast.error('DISCOM is required'); return false; }
             if (!form.monthly_bill_amount) { toast.error('Monthly Bill is required'); return false; }
+            if (parseFloat(form.monthly_bill_amount) < 0) { toast.error('Monthly Bill cannot be negative'); return false; }
             if (!form.roof_size) { toast.error('Roof Size is required'); return false; }
             if (!form.system_capacity) { toast.error('System Capacity is required'); return false; }
+            if (!form.category) { toast.error('Category is required'); return false; }
             return true;
         }
         if (step === 4) {
+            // Bank Details
+            if (!form.beneficiary_bank_name) { toast.error('Bank Name is required'); return false; }
+            if (!form.beneficiary_bank_account) { toast.error('Bank Account Number is required'); return false; }
+            if (!form.beneficiary_bank_ifsc) { toast.error('Bank IFSC Code is required'); return false; }
+            if (!form.beneficiary_bank_branch) { toast.error('Bank Branch is required'); return false; }
+
             // Documents are required
             if (!aadhaarFront.file) { toast.error('Aadhaar Front is required'); return false; }
             if (!aadhaarBack.file) { toast.error('Aadhaar Back is required'); return false; }
@@ -403,8 +438,12 @@ export default function LeadForm({ role, onSuccess }: LeadFormProps) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (validateStep(4)) {
-            mutation.mutate();
+        if (currentStep === 4) {
+            if (validateStep(4)) {
+                mutation.mutate();
+            }
+        } else {
+            nextStep();
         }
     };
 
@@ -555,10 +594,21 @@ export default function LeadForm({ role, onSuccess }: LeadFormProps) {
                                 label="Roof Size (sq ft)" name="roof_size" value={form.roof_size} onChange={set} required
                                 options={getOptions('roof_size')}
                             />
-                            <div className="md:col-span-2">
+                            <div>
                                 <Select
                                     label="System Capacity (kW)" name="system_capacity" value={form.system_capacity} onChange={set} required
                                     options={getOptions('system_capacity')}
+                                />
+                            </div>
+                            <div>
+                                <Select
+                                    label="Category" name="category" value={form.category} onChange={set} required
+                                    options={[
+                                        { value: 'APL', label: 'APL (Above Poverty Line)' },
+                                        { value: 'BPL', label: 'BPL (Below Poverty Line)' },
+                                        { value: 'AAY', label: 'AAY (Antyodaya Anna Yojana)' },
+                                        { value: 'OTHER', label: 'Other / General' },
+                                    ]}
                                 />
                             </div>
                         </div>
@@ -574,10 +624,10 @@ export default function LeadForm({ role, onSuccess }: LeadFormProps) {
                                 <h2 className="font-bold text-slate-700">Bank Details</h2>
                             </div>
                             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <Field label="Bank Name" name="beneficiary_bank_name" value={form.beneficiary_bank_name} onChange={set} placeholder="State Bank of India" />
-                                <Field label="Account Number" name="beneficiary_bank_account" value={form.beneficiary_bank_account} onChange={set} placeholder="1234567890" inputMode="numeric" />
-                                <Field label="IFSC Code" name="beneficiary_bank_ifsc" value={form.beneficiary_bank_ifsc} onChange={set} placeholder="SBIN0001234" />
-                                <Field label="Branch Name" name="beneficiary_bank_branch" value={form.beneficiary_bank_branch} onChange={set} placeholder="Main Branch, City" />
+                                <Field label="Bank Name" name="beneficiary_bank_name" value={form.beneficiary_bank_name} onChange={set} placeholder="State Bank of India" required />
+                                <Field label="Account Number" name="beneficiary_bank_account" value={form.beneficiary_bank_account} onChange={set} placeholder="1234567890" inputMode="numeric" required />
+                                <Field label="IFSC Code" name="beneficiary_bank_ifsc" value={form.beneficiary_bank_ifsc} onChange={set} placeholder="SBIN0001234" required />
+                                <Field label="Branch Name" name="beneficiary_bank_branch" value={form.beneficiary_bank_branch} onChange={set} placeholder="Main Branch, City" required />
                             </div>
                         </div>
 

@@ -230,6 +230,12 @@ class User extends Authenticatable implements \Illuminate\Contracts\Auth\MustVer
                 $user->qr_token = bin2hex(random_bytes(16));
             }
         });
+
+        static::saving(function ($user) {
+            if ($user->role === self::ROLE_ENUMERATOR && $user->status === 'active' && !$user->enumerator_id) {
+                $user->enumerator_id = app(\App\Services\AgentService::class)->generateEnumeratorId();
+            }
+        });
     }
 
 
