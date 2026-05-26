@@ -12,16 +12,18 @@
 import type { UserRole } from '@/types';
 import type { LeadStatus } from '@/types';
 
-// Full status set — admin/operator can reach any of these
 export const ALL_STATUSES: LeadStatus[] = [
     'NEW',
     'DOCUMENTS_FOR_REGISTRATION_COMPLETED',
     'REJECTED',
+    'FILE_REJECTED',
     'REGISTERED',
     'SURVEY_DONE',
     'LEAD_DOCUMENTS_PRINTED',
     'SIGNATURE_PENDING',
     'SIGNATURE_DONE',
+    'FILE_SUBMITTED_TO_BANK',
+    'FILE_PENDING_DISBURSAL',
     'FILE_DISBURSED',
     'DISBURSEMENT_VERIFIED',
     'DISPATCH_INITIATED',

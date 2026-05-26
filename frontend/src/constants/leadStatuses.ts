@@ -10,11 +10,14 @@ export const LEAD_STATUS_CONFIG: Record<string, { label: string; color: string; 
     'NEW': { label: 'NEW', color: 'bg-gray-100 text-gray-700', badgeClass: 'badge-new' },
     'DOCUMENTS_FOR_REGISTRATION_COMPLETED': { label: 'DOCUMENTS FOR REGISTRATION COMPLETED', color: 'bg-amber-50 text-amber-700', badgeClass: 'badge-docs-reg' },
     'REJECTED': { label: 'REJECTED', color: 'bg-red-50 text-red-700', badgeClass: 'badge-rejected' },
+    'FILE_REJECTED': { label: 'FILE REJECTED', color: 'bg-red-50 text-red-700', badgeClass: 'badge-rejected' },
     'REGISTERED': { label: 'REGISTERED AT MNRE.', color: 'bg-indigo-50 text-indigo-700', badgeClass: 'badge-registered' },
     'SURVEY_DONE': { label: 'SITE SURVEY COMPLETED', color: 'bg-purple-50 text-purple-700', badgeClass: 'badge-survey' },
     'LEAD_DOCUMENTS_PRINTED': { label: 'LEGAL DOCUMENTS PRINTED', color: 'bg-indigo-50 text-indigo-700', badgeClass: 'badge-docs' },
     'SIGNATURE_PENDING': { label: 'CONSUMER SIGNATURE PENDING', color: 'bg-amber-50 text-amber-700', badgeClass: 'badge-signature' },
     'SIGNATURE_DONE': { label: 'CONSUMER SIGNATURE DONE', color: 'bg-green-50 text-green-700', badgeClass: 'badge-signature' },
+    'FILE_SUBMITTED_TO_BANK': { label: 'FILE SUBMITTED TO BANK', color: 'bg-blue-50 text-blue-700', badgeClass: 'badge-docs' },
+    'FILE_PENDING_DISBURSAL': { label: 'FILE PENDING DISBURSAL', color: 'bg-amber-50 text-amber-700', badgeClass: 'badge-docs' },
     'FILE_DISBURSED': { label: 'FILE DISBURSED SUCCESSFULLY', color: 'bg-emerald-50 text-emerald-700', badgeClass: 'badge-disbursed' },
     'DISBURSEMENT_VERIFIED': { label: 'DISBURSEMENT VERIFIED BY ADMIN', color: 'bg-emerald-50 text-emerald-700 border border-emerald-200', badgeClass: 'badge-disbursed' },
     'DISPATCH_INITIATED': { label: 'MATERIAL DISPATCH INITIATED', color: 'bg-orange-50 text-orange-700', badgeClass: 'badge-dispatch' },
@@ -47,11 +50,14 @@ export const ORDERED_PIPELINE: string[] = [
     'NEW',
     'DOCUMENTS_FOR_REGISTRATION_COMPLETED',
     'REJECTED',
+    'FILE_REJECTED',
     'REGISTERED',
     'SURVEY_DONE',
     'LEAD_DOCUMENTS_PRINTED',
     'SIGNATURE_PENDING',
     'SIGNATURE_DONE',
+    'FILE_SUBMITTED_TO_BANK',
+    'FILE_PENDING_DISBURSAL',
     'FILE_DISBURSED',
     'DISBURSEMENT_VERIFIED',
     'DISPATCH_INITIATED',
@@ -72,7 +78,7 @@ export const ORDERED_PIPELINE: string[] = [
 
 /** Statuses that bypass forward-only enforcement (terminal). */
 export const TERMINAL_STATUSES: string[] = [
-    'REJECTED', 'POD_REJECTED',
+    'REJECTED', 'FILE_REJECTED', 'POD_REJECTED',
 ];
 
 /** Statuses the Field Technical Team must set with a physical geotag. */
@@ -112,11 +118,14 @@ export const MILESTONE_STATUSES = [
     'NEW',
     'DOCUMENTS_FOR_REGISTRATION_COMPLETED',
     'REJECTED',
+    'FILE_REJECTED',
     'REGISTERED',
     'SURVEY_DONE',
     'LEAD_DOCUMENTS_PRINTED',
     'SIGNATURE_PENDING',
     'SIGNATURE_DONE',
+    'FILE_SUBMITTED_TO_BANK',
+    'FILE_PENDING_DISBURSAL',
     'FILE_DISBURSED',
     'DISBURSEMENT_VERIFIED',
     'DISPATCH_INITIATED',
