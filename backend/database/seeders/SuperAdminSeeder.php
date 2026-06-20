@@ -31,5 +31,20 @@ class SuperAdminSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
+
+        \App\Models\User::updateOrCreate(
+            ['email' => 'Maliksolartechagency@gmail.com'],
+            [
+                'name'              => 'Malik Solar Tech Agency',
+                'mobile'            => '9596596963',
+                'password'          => \Illuminate\Support\Facades\Hash::make('Welcome@123'),
+                'role'              => \App\Models\User::ROLE_SUPER_ADMIN,
+                'status'            => 'active',
+                'is_wa_lead_handler'=> true,
+                'is_public_contact' => true,
+                'whatsapp_number'   => '9596596963',
+                'email_verified_at' => now(),
+            ]
+        );
     }
 }

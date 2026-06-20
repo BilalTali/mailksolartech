@@ -107,20 +107,20 @@ class CommissionService
         $adminId = ($admin && $admin->role === 'admin') ? $admin->id : null;
 
         $ledgerCredits = $adminId 
-            ? AdminLedger::where('admin_id', $adminId)->where('transaction_type', 'credit')->sum('amount')
-            : AdminLedger::where('transaction_type', 'credit')->sum('amount');
+            ? AdminLedger::whereAdminId($adminId)->whereTransactionType('credit')->sum('amount')
+            : AdminLedger::whereTransactionType('credit')->sum('amount');
 
         $ledgerDebits = $adminId 
-            ? AdminLedger::where('admin_id', $adminId)->where('transaction_type', 'debit')->sum('amount')
-            : AdminLedger::where('transaction_type', 'debit')->sum('amount');
+            ? AdminLedger::whereAdminId($adminId)->whereTransactionType('debit')->sum('amount')
+            : AdminLedger::whereTransactionType('debit')->sum('amount');
 
         $commissionsEarned = $adminId 
-            ? Commission::where('payee_id', $adminId)->where('payee_role', 'admin')->sum('amount')
-            : Commission::where('payee_role', 'admin')->sum('amount');
+            ? Commission::wherePayeeId($adminId)->wherePayeeRole('admin')->sum('amount')
+            : Commission::wherePayeeRole('admin')->sum('amount');
 
         $downlineRoles = ['agent', 'enumerator', 'field_technical_team', 'super_agent'];
         $commissionsToDownlines = $adminId 
-            ? Commission::where('entered_by', $adminId)->whereIn('payee_role', $downlineRoles)->sum('amount')
+            ? Commission::whereEnteredBy($adminId)->whereIn('payee_role', $downlineRoles)->sum('amount')
             : Commission::whereIn('payee_role', $downlineRoles)->sum('amount');
 
         return (float) (($commissionsEarned + $ledgerCredits) - ($ledgerDebits + $commissionsToDownlines));
@@ -198,6 +198,10 @@ class CommissionService
             throw new \InvalidArgumentException('Commission is already marked as paid.');
         }
 
+        if ((float) $commission->amount <= 0) {
+            throw new \InvalidArgumentException('Cannot mark a zero or negative commission as paid.');
+        }
+
         $commission->update([
             'payment_status' => 'paid',
             'paid_at' => now(),
@@ -218,8 +222,8 @@ class CommissionService
      */
     public function revokeUnpaidCommissions(Lead $lead, ?User $revokedBy = null): void
     {
-        /** @var \Illuminate\Database\Eloquent\Collection<int, \App\Models\Commission> $commissions */
-        $commissions = Commission::query()->where(fn ($q) => $q->where('lead_id', $lead->id))->unpaid()->get();
+        /** @var \Illuminate\Database\Eloquent\Collection<int, Commission> $commissions */
+        $commissions = Commission::query()->where(fn ($q) => $q->whereLeadId($lead->id))->unpaid()->get();
 
         foreach ($commissions as $commission) {
             $this->notifyCommissionRevoked($commission, $revokedBy);
@@ -257,7 +261,7 @@ class CommissionService
         $chain = $this->hierarchyService->getCommissionChain($submitter, $lead);
 
         // Prepend submitter itself (enumerator or agent)
-        $fullChain = collect([$submitter])->merge($chain)->filter()->unique('id');
+        $fullChain = collect([$submitter])->merge($chain)->filter()->unique(fn($item) => $item->id);
 
         $level = 1;
         DB::transaction(function () use ($lead, $actor, $fullChain, &$level) {
@@ -267,8 +271,8 @@ class CommissionService
                 }
 
                 // Skip if auto-commission already exists for this payee/lead (enforces unique_lead_payee_person constraint)
-                $exists = Commission::where('lead_id', $lead->id)
-                    ->where('payee_id', $payee->id)
+                $exists = Commission::whereLeadId($lead->id)
+                    ->wherePayeeId($payee->id)
                     ->exists();
 
                 if ($exists) {
@@ -340,9 +344,9 @@ class CommissionService
             if (!$user) continue;
 
             // Skip if commission already exists for this lead/user/type combo
-            $exists = Commission::where('lead_id', $lead->id)
-                ->where('payee_id', $user->id)
-                ->where('chain_type', $tech['type'])
+            $exists = Commission::whereLeadId($lead->id)
+                ->wherePayeeId($user->id)
+                ->whereChainType($tech['type'])
                 ->exists();
 
             if ($exists) continue;
@@ -452,7 +456,7 @@ class CommissionService
             $lead->createdBySuperAgent,
             $leadHasPassedPod ? $lead->assignedSurveyor  : null,
             $leadHasPassedPod ? $lead->assignedInstaller : null,
-        ])->filter()->unique('id');
+        ])->filter()->unique(fn($item) => $item->id);
 
         foreach ($potentialPayees as $payee) {
             /** @var User $payee */
@@ -488,8 +492,8 @@ class CommissionService
     private function buildReferralPrompt(Lead $lead, User $referralSA): array
     {
         $comm = Commission::query()
-            ->where('lead_id', $lead->id)
-            ->where('payee_id', $referralSA->id)
+            ->whereLeadId($lead->id)
+            ->wherePayeeId($referralSA->id)
             ->first();
 
         return [
@@ -518,7 +522,7 @@ class CommissionService
         }
         $payer = $payerId ? User::find($payerId) : null;
 
-        $comm = Commission::query()->where(fn($q) => $q->where('lead_id', $lead->id))->where(fn($q) => $q->where('payee_id', $payee->id))->first();
+        $comm = Commission::query()->where(fn($q) => $q->whereLeadId($lead->id))->where(fn($q) => $q->wherePayeeId($payee->id))->first();
         
         return [
             'payee_id' => $payee->id,
@@ -585,9 +589,9 @@ class CommissionService
      */
     public function getLeadCommissions(Lead $lead): array
     {
-        /** @var \Illuminate\Database\Eloquent\Collection<int, \App\Models\Commission> $commissions */
+        /** @var \Illuminate\Database\Eloquent\Collection<int, Commission> $commissions */
         $commissions = Commission::query()
-            ->where(fn ($q) => $q->where('lead_id', $lead->id))
+            ->where(fn ($q) => $q->whereLeadId($lead->id))
             ->with(['payee', 'enteredBy'])
             ->get();
 

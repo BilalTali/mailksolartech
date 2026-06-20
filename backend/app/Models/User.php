@@ -651,6 +651,6 @@ class User extends Authenticatable implements \Illuminate\Contracts\Auth\MustVer
             SELECT id FROM team_hierarchy
         ", ['start_id' => $userId]);
 
-        return collect($results)->pluck('id')->toArray();
+        return array_column($results, 'id');
     }
 }

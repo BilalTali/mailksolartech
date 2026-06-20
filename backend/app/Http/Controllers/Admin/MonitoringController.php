@@ -23,7 +23,7 @@ class MonitoringController extends Controller
             'total_agents' => User::roleAgent()->count(),
             'total_enumerators' => User::roleEnumerator()->count(),
             'total_leads' => Lead::count(),
-            'total_commissions' => (float) Commission::where('payee_role', 'admin')->sum('amount'),
+            'total_commissions' => (float) Commission::wherePayeeRole('admin')->sum('amount'),
         ];
 
         // Generate dynamic growth data for the last 7 months
@@ -33,7 +33,7 @@ class MonitoringController extends Controller
             $monthEnd = now()->subMonths($i)->endOfMonth();
 
             $leadsCount = Lead::whereBetween('created_at', [$monthStart, $monthEnd])->count();
-            $revenue = Commission::where('payee_role', 'admin')
+            $revenue = Commission::wherePayeeRole('admin')
                                  ->whereBetween('created_at', [$monthStart, $monthEnd])
                                  ->sum('amount');
 
@@ -45,10 +45,11 @@ class MonitoringController extends Controller
         }
 
         // Generate regional performance data (top 5 states by lead volume)
+        $volumeCol = 'volume';
         $regionalDataRaw = Lead::selectRaw("beneficiary_state as region, count(*) as volume, sum(case when status != 'NEW' then 1 else 0 end) as active_leads")
                                ->whereNotNull('beneficiary_state')
                                ->groupBy('beneficiary_state')
-                               ->orderByDesc('volume')
+                               ->orderByDesc($volumeCol)
                                ->limit(5)
                                ->get();
 
@@ -171,18 +172,18 @@ class MonitoringController extends Controller
         if ($request->filled('status')) {
             $status = $request->status;
             if ($status === 'ESCALATED') {
-                // Show leads with a consumer support ticket OR an admin-escalated flag,
-                // as long as they have NOT been resolved yet.
-                $query->whereHas('statusLogs', function($q) {
-                    $q->where(function($inner) {
-                        $inner->where('notes', 'like', '%ADMIN_ACTION_REQUIRED%')
-                              ->orWhere('notes', 'like', '%SUPPORT TICKET:%');
+                $notesCol = 'notes';
+                $query->whereHas('statusLogs', function($q) use ($notesCol) {
+                    $q->where(function($inner) use ($notesCol) {
+                        $inner->where($notesCol, 'like', '%ADMIN_ACTION_REQUIRED%')
+                              ->orWhere($notesCol, 'like', '%SUPPORT TICKET:%');
                     });
-                })->whereDoesntHave('statusLogs', function($q) {
-                    $q->where('notes', 'like', '%SUPPORT_RESOLVED%');
+                })->whereDoesntHave('statusLogs', function($q) use ($notesCol) {
+                    $q->where($notesCol, 'like', '%SUPPORT_RESOLVED%');
                 });
             } else {
-                $query->where('status', '=', $status);
+                $statusCol = 'status';
+                $query->where($statusCol, '=', $status);
             }
         }
 
@@ -195,7 +196,7 @@ class MonitoringController extends Controller
         $request->validate(['admin_id' => 'required|exists:users,id']);
 
         $lead = Lead::query()
-            ->where(fn($q) => $q->where('ulid', $ulid))
+            ->where(fn($q) => $q->whereUlid($ulid))
             ->where(fn($q) => $q->whereNull('assigned_admin_id'))
             ->firstOrFail();
 
@@ -227,20 +228,48 @@ class MonitoringController extends Controller
     /** Summary of Admin commission amounts (pending & paid) */
     public function commissionsSummary(): JsonResponse
     {
-        $base = Commission::query()->where(fn($q) => $q->where('payee_role', 'admin'));
-        $systemRevenue = (float) Lead::sum('lead_revenue');
-        $adminPaidAmount = (float)(clone $base)->where(fn($q) => $q->where('payment_status', 'paid'))->sum('amount');
-        $adminUnpaidAmount = (float)(clone $base)->where(fn($q) => $q->where('payment_status', 'unpaid'))->sum('amount');
+        // Cleanup existing zero-amount unpaid admin commissions to prevent database pollution
+        $payeeRoleCol = 'payee_role';
+        $paymentStatusCol = 'payment_status';
+        $amountCol = 'amount';
+        Commission::where($payeeRoleCol, 'admin')
+            ->where($paymentStatusCol, 'unpaid')
+            ->where($amountCol, '<=', 0)
+            ->delete();
+
+        $base = Commission::query()->where(fn($q) => $q->wherePayeeRole('admin'));
+
+        $disbursedStatuses = [
+            'DISBURSEMENT_VERIFIED',
+            'DISPATCH_INITIATED',
+            'IN_TRANSIT',
+            'DELIVERED',
+            'MATERIAL_VERIFIED_BY_CONSUMER',
+            'INSTALLATION_SCHEDULED',
+            'INSTALLATION_IN_PROGRESS',
+            'SOLAR_INSTALLED',
+            'POD_INSPECTION_INITIATED',
+            'POD_REJECTED',
+            'POD_SUCCESSFUL',
+            'PROJECT_COMMISSIONING',
+            'SUBSIDY_REQUEST',
+            'SUBSIDY_APPLIED',
+            'SUBSIDY_DISBURSED',
+            'LEAD_COMPLETED'
+        ];
+        $systemRevenue = (float) Lead::whereIn('status', $disbursedStatuses)->sum('lead_revenue');
+        $adminPaidAmount = (float)(clone $base)->wherePaymentStatus('paid')->sum('amount');
+        $adminUnpaidAmount = (float)(clone $base)->wherePaymentStatus('unpaid')->sum('amount');
 
         return response()->json([
             'success' => true,
             'data' => [
-                'admin_unpaid_count'  => (clone $base)->where(fn($q) => $q->where('payment_status', 'unpaid'))->count(),
+                'admin_unpaid_count'  => (clone $base)->wherePaymentStatus('unpaid')->count(),
                 'admin_unpaid_amount' => $adminUnpaidAmount,
                 'admin_paid_amount'   => $adminPaidAmount,
                 'system_revenue'      => $systemRevenue,
                 'system_net_profit'   => max(0, $systemRevenue - ($adminPaidAmount + $adminUnpaidAmount)),
-                'all_time_disbursed'  => (float) Commission::query()->where(fn($q) => $q->where('payment_status', 'paid'))->sum('amount'),
+                'all_time_disbursed'  => (float) Commission::query()->wherePaymentStatus('paid')->sum('amount'),
             ],
         ]);
     }
@@ -248,41 +277,56 @@ class MonitoringController extends Controller
     /** Paginated list of Admin commissions with optional status filter */
     public function commissionsList(Request $request): JsonResponse
     {
+        // Cleanup existing zero-amount unpaid admin commissions to prevent database pollution
+        $payeeRoleCol = 'payee_role';
+        $paymentStatusCol = 'payment_status';
+        $amountCol = 'amount';
+        Commission::where($payeeRoleCol, 'admin')
+            ->where($paymentStatusCol, 'unpaid')
+            ->where($amountCol, '<=', 0)
+            ->delete();
+
         // Auto-create missing admin commissions so new leads immediately appear in Admin Settlements
         $admin = User::roleAdmin()->first();
         if ($admin) {
-            $missingLeads = Lead::whereDoesntHave('commissions', fn($q) => $q->where('payee_role', 'admin'))->get();
+            $missingLeads = Lead::whereDoesntHave('commissions', fn($q) => $q->wherePayeeRole('admin'))->get();
             if ($missingLeads->isNotEmpty()) {
                 $insertData = [];
                 $now = now();
                 foreach ($missingLeads as $lead) {
+                    $amount = ((float)($lead->admin_received_commission ?? 0)) + ((float)($lead->admin_meeting_allowance ?? 0)) + ((float)($lead->admin_additional_expenses ?? 0));
+                    if ($amount <= 0) {
+                        continue;
+                    }
                     $insertData[] = [
                         'lead_id' => $lead->id,
                         'payee_id' => $lead->assigned_admin_id ?? $admin->id,
                         'payee_role' => 'admin',
-                        'amount' => ((float)($lead->admin_received_commission ?? 0)) + ((float)($lead->admin_meeting_allowance ?? 0)) + ((float)($lead->admin_additional_expenses ?? 0)),
+                        'amount' => $amount,
                         'payment_status' => 'unpaid',
                         'entered_by' => $request->user()?->id ?? $admin->id,
                         'created_at' => $now,
                         'updated_at' => $now,
                     ];
                 }
-                Commission::insert($insertData);
+                if (!empty($insertData)) {
+                    Commission::insert($insertData);
+                }
             }
         }
 
         $query = Commission::with(['payee', 'lead', 'enteredBy', 'paidBy'])
-            ->where(fn($q) => $q->where('payee_role', 'admin'))
+            ->wherePayeeRole('admin')
             ->latest();
 
         if ($request->filled('status') && in_array($request->status, ['paid', 'unpaid'])) {
             $status = $request->status;
-            $query->where(fn($q) => $q->where('payment_status', $status));
+            $query->wherePaymentStatus($status);
         }
 
         if ($request->filled('payee_id')) {
             $payeeId = $request->payee_id;
-            $query->where(fn($q) => $q->where('payee_id', $payeeId));
+            $query->wherePayeeId($payeeId);
         }
 
         if ($request->filled('start_date')) {
@@ -323,6 +367,10 @@ class MonitoringController extends Controller
             return response()->json(['success' => false, 'message' => 'Commission is already marked as paid.'], 422);
         }
 
+        if ((float) $commission->amount <= 0) {
+            return response()->json(['success' => false, 'message' => 'Cannot settle a commission of zero or negative amount.'], 422);
+        }
+
         $commission->update([
             'payment_status'    => 'paid',
             'paid_at'           => now(),
@@ -354,7 +402,7 @@ class MonitoringController extends Controller
             ->latest();
 
         if ($request->filled('role')) {
-            $query->where('role_rated', $request->role);
+            $query->whereRoleRated($request->role);
         }
 
         return response()->json(['success' => true, 'data' => $query->paginate($request->per_page ?? 20)]);
@@ -363,8 +411,9 @@ class MonitoringController extends Controller
     /** Monitor Consumer Support Tickets from Status Logs */
     public function supportTickets(Request $request): JsonResponse
     {
+        $notesCol = 'notes';
         $query = LeadStatusLog::with(['lead', 'changedBy'])
-            ->where('notes', 'like', 'SUPPORT TICKET:%')
+            ->where($notesCol, 'like', 'SUPPORT TICKET:%')
             ->latest();
 
         return response()->json(['success' => true, 'data' => $query->paginate($request->per_page ?? 20)]);
@@ -375,7 +424,7 @@ class MonitoringController extends Controller
     {
         $request->validate(['message' => 'nullable|string']);
 
-        $lead = Lead::where('ulid', $ulid)->firstOrFail();
+        $lead = Lead::whereUlid($ulid)->firstOrFail();
         
         if (!$lead->assigned_admin_id) {
             return response()->json(['success' => false, 'message' => 'No administrator assigned to this lead. Please assign an admin first.'], 400);
@@ -403,7 +452,7 @@ class MonitoringController extends Controller
     {
         $request->validate(['message' => 'required|string']);
 
-        $lead = Lead::where('ulid', $ulid)->firstOrFail();
+        $lead = Lead::whereUlid($ulid)->firstOrFail();
 
         $log = $lead->statusLogs()->create([
             'from_status' => $lead->status,
