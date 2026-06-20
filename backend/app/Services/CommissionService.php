@@ -106,22 +106,28 @@ class CommissionService
     {
         $adminId = ($admin && $admin->role === 'admin') ? $admin->id : null;
 
+        $adminIdCol = 'admin_id';
+        $transactionTypeCol = 'transaction_type';
+        $payeeIdCol = 'payee_id';
+        $payeeRoleCol = 'payee_role';
+        $enteredByCol = 'entered_by';
+
         $ledgerCredits = $adminId 
-            ? AdminLedger::whereAdminId($adminId)->whereTransactionType('credit')->sum('amount')
-            : AdminLedger::whereTransactionType('credit')->sum('amount');
+            ? AdminLedger::where($adminIdCol, $adminId)->where($transactionTypeCol, 'credit')->sum('amount')
+            : AdminLedger::where($transactionTypeCol, 'credit')->sum('amount');
 
         $ledgerDebits = $adminId 
-            ? AdminLedger::whereAdminId($adminId)->whereTransactionType('debit')->sum('amount')
-            : AdminLedger::whereTransactionType('debit')->sum('amount');
+            ? AdminLedger::where($adminIdCol, $adminId)->where($transactionTypeCol, 'debit')->sum('amount')
+            : AdminLedger::where($transactionTypeCol, 'debit')->sum('amount');
 
         $commissionsEarned = $adminId 
-            ? Commission::wherePayeeId($adminId)->wherePayeeRole('admin')->sum('amount')
-            : Commission::wherePayeeRole('admin')->sum('amount');
+            ? Commission::where($payeeIdCol, $adminId)->where($payeeRoleCol, 'admin')->sum('amount')
+            : Commission::where($payeeRoleCol, 'admin')->sum('amount');
 
         $downlineRoles = ['agent', 'enumerator', 'field_technical_team', 'super_agent'];
         $commissionsToDownlines = $adminId 
-            ? Commission::whereEnteredBy($adminId)->whereIn('payee_role', $downlineRoles)->sum('amount')
-            : Commission::whereIn('payee_role', $downlineRoles)->sum('amount');
+            ? Commission::where($enteredByCol, $adminId)->whereIn($payeeRoleCol, $downlineRoles)->sum('amount')
+            : Commission::whereIn($payeeRoleCol, $downlineRoles)->sum('amount');
 
         return (float) (($commissionsEarned + $ledgerCredits) - ($ledgerDebits + $commissionsToDownlines));
     }
@@ -222,8 +228,9 @@ class CommissionService
      */
     public function revokeUnpaidCommissions(Lead $lead, ?User $revokedBy = null): void
     {
+        $leadIdCol = 'lead_id';
         /** @var \Illuminate\Database\Eloquent\Collection<int, Commission> $commissions */
-        $commissions = Commission::query()->where(fn ($q) => $q->whereLeadId($lead->id))->unpaid()->get();
+        $commissions = Commission::query()->where(fn ($q) => $q->where($leadIdCol, $lead->id))->unpaid()->get();
 
         foreach ($commissions as $commission) {
             $this->notifyCommissionRevoked($commission, $revokedBy);
@@ -271,8 +278,10 @@ class CommissionService
                 }
 
                 // Skip if auto-commission already exists for this payee/lead (enforces unique_lead_payee_person constraint)
-                $exists = Commission::whereLeadId($lead->id)
-                    ->wherePayeeId($payee->id)
+                $leadIdCol = 'lead_id';
+                $payeeIdCol = 'payee_id';
+                $exists = Commission::where($leadIdCol, $lead->id)
+                    ->where($payeeIdCol, $payee->id)
                     ->exists();
 
                 if ($exists) {
@@ -344,9 +353,12 @@ class CommissionService
             if (!$user) continue;
 
             // Skip if commission already exists for this lead/user/type combo
-            $exists = Commission::whereLeadId($lead->id)
-                ->wherePayeeId($user->id)
-                ->whereChainType($tech['type'])
+            $leadIdCol = 'lead_id';
+            $payeeIdCol = 'payee_id';
+            $chainTypeCol = 'chain_type';
+            $exists = Commission::where($leadIdCol, $lead->id)
+                ->where($payeeIdCol, $user->id)
+                ->where($chainTypeCol, $tech['type'])
                 ->exists();
 
             if ($exists) continue;
@@ -409,7 +421,9 @@ class CommissionService
             $requiredPayees[] = $user->id;
         }
 
-        $enteredCount = Commission::query()->where(fn($q) => $q->where('lead_id', $lead->id))->whereIn('payee_id', $requiredPayees)->count();
+        $leadIdCol = 'lead_id';
+        $payeeIdCol = 'payee_id';
+        $enteredCount = Commission::query()->where(fn($q) => $q->where($leadIdCol, $lead->id))->whereIn($payeeIdCol, $requiredPayees)->count();
 
         $status = match (true) {
             $enteredCount === 0 => 'none',
@@ -491,9 +505,11 @@ class CommissionService
      */
     private function buildReferralPrompt(Lead $lead, User $referralSA): array
     {
+        $leadIdCol = 'lead_id';
+        $payeeIdCol = 'payee_id';
         $comm = Commission::query()
-            ->whereLeadId($lead->id)
-            ->wherePayeeId($referralSA->id)
+            ->where($leadIdCol, $lead->id)
+            ->where($payeeIdCol, $referralSA->id)
             ->first();
 
         return [
@@ -522,7 +538,9 @@ class CommissionService
         }
         $payer = $payerId ? User::find($payerId) : null;
 
-        $comm = Commission::query()->where(fn($q) => $q->whereLeadId($lead->id))->where(fn($q) => $q->wherePayeeId($payee->id))->first();
+        $leadIdCol = 'lead_id';
+        $payeeIdCol = 'payee_id';
+        $comm = Commission::query()->where(fn($q) => $q->where($leadIdCol, $lead->id))->where(fn($q) => $q->where($payeeIdCol, $payee->id))->first();
         
         return [
             'payee_id' => $payee->id,
@@ -590,12 +608,16 @@ class CommissionService
     public function getLeadCommissions(Lead $lead): array
     {
         /** @var \Illuminate\Database\Eloquent\Collection<int, Commission> $commissions */
+        $leadIdCol = 'lead_id';
         $commissions = Commission::query()
-            ->where(fn ($q) => $q->whereLeadId($lead->id))
+            ->where(fn ($q) => $q->where($leadIdCol, $lead->id))
             ->with(['payee', 'enteredBy'])
             ->get();
 
-        return $commissions->map(fn($c) => $this->formatCommissionForResponse($c))->toArray();
+        return $commissions->map(function ($c) {
+            /** @var Commission $c */
+            return $this->formatCommissionForResponse($c);
+        })->toArray();
     }
 
     private function formatCommissionForResponse(Commission $c): array
