@@ -225,9 +225,17 @@ class Lead extends Model
     {
         static::saving(function (Lead $lead) {
             if (empty($lead->lead_revenue) && $lead->system_capacity) {
-                $kw = (float) filter_var($lead->system_capacity, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
-                if ($kw > 0) {
-                    $lead->lead_revenue = $kw * 10000;
+                $cleanCap = filter_var($lead->system_capacity, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+                $slab = \App\Models\CommissionSlab::where('capacity', $cleanCap . 'kw')
+                    ->whereNull('super_agent_id')
+                    ->first();
+                if ($slab && $slab->super_admin_rate > 0) {
+                    $lead->lead_revenue = (float) $slab->super_admin_rate;
+                } else {
+                    $kw = (float) $cleanCap;
+                    if ($kw > 0) {
+                        $lead->lead_revenue = $kw * 10000;
+                    }
                 }
             }
             

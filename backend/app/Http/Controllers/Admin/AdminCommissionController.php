@@ -580,6 +580,26 @@ class AdminCommissionController extends Controller
                 ->where('payee_role', 'field_technical_team')
                 ->values();
 
+            $disbursedStatuses = [
+                'DISBURSEMENT_VERIFIED',
+                'DISPATCH_INITIATED',
+                'IN_TRANSIT',
+                'DELIVERED',
+                'MATERIAL_VERIFIED_BY_CONSUMER',
+                'INSTALLATION_SCHEDULED',
+                'INSTALLATION_IN_PROGRESS',
+                'SOLAR_INSTALLED',
+                'POD_INSPECTION_INITIATED',
+                'POD_REJECTED',
+                'POD_SUCCESSFUL',
+                'PROJECT_COMMISSIONING',
+                'SUBSIDY_REQUEST',
+                'SUBSIDY_APPLIED',
+                'SUBSIDY_DISBURSED',
+                'LEAD_COMPLETED'
+            ];
+            $isDisbursed = in_array($lead->status, $disbursedStatuses);
+
             $received       = (float) ($lead->admin_received_commission ?? 0);
             $allowance      = (float) ($lead->admin_meeting_allowance ?? 0);
             $expenses       = (float) ($lead->admin_additional_expenses ?? 0);
@@ -589,7 +609,7 @@ class AdminCommissionController extends Controller
             $totalTech      = (float) $techPayouts->sum('amount');
 
             if ($isSuperAdmin) {
-                $inflow = (float) $lead->lead_revenue;
+                $inflow = $isDisbursed ? (float) $lead->lead_revenue : 0.0;
                 $outflow = $totalInflowFromSa;
                 
                 $downlinesMapped = [];
