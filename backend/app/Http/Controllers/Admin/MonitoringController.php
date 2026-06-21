@@ -272,30 +272,30 @@ class MonitoringController extends Controller
 
         // Auto-create missing admin commissions so ALL leads (including pre-disbursement ones)
         // immediately appear in Admin Settlements — even if their financial allocation is still ₹0.
-        $admin = User::roleAdmin()->first();
-        if ($admin) {
-            $missingLeads = Lead::whereDoesntHave('commissions', fn($q) => $q->wherePayeeRole('admin'))->get();
-            if ($missingLeads->isNotEmpty()) {
-                $insertData = [];
-                $now = now();
-                foreach ($missingLeads as $lead) {
-                    $amount = ((float)($lead->admin_received_commission ?? 0)) + ((float)($lead->admin_meeting_allowance ?? 0)) + ((float)($lead->admin_additional_expenses ?? 0));
-                    // Do NOT skip ₹0 leads — they should still appear so the Super Admin
-                    // can see all pending leads before disbursement values are entered.
-                    $insertData[] = [
-                        'lead_id' => $lead->id,
-                        'payee_id' => $lead->assigned_admin_id ?? $admin->id,
-                        'payee_role' => 'admin',
-                        'amount' => $amount,
-                        'payment_status' => 'unpaid',
-                        'entered_by' => $request->user()?->id ?? $admin->id,
-                        'created_at' => $now,
-                        'updated_at' => $now,
-                    ];
-                }
-                if (!empty($insertData)) {
-                    Commission::insert($insertData);
-                }
+        // We only create commissions for leads that actually HAVE an assigned admin.
+        $missingLeads = Lead::whereDoesntHave('commissions', fn($q) => $q->wherePayeeRole('admin'))
+            ->whereNotNull('assigned_admin_id')
+            ->get();
+
+        if ($missingLeads->isNotEmpty()) {
+            $insertData = [];
+            $now = now();
+            foreach ($missingLeads as $lead) {
+                $amount = ((float)($lead->admin_received_commission ?? 0)) + ((float)($lead->admin_meeting_allowance ?? 0)) + ((float)($lead->admin_additional_expenses ?? 0));
+                
+                $insertData[] = [
+                    'lead_id' => $lead->id,
+                    'payee_id' => $lead->assigned_admin_id,
+                    'payee_role' => 'admin',
+                    'amount' => $amount,
+                    'payment_status' => 'unpaid',
+                    'entered_by' => $request->user()?->id ?? $lead->assigned_admin_id,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+            if (!empty($insertData)) {
+                Commission::insert($insertData);
             }
         }
 
