@@ -15,6 +15,7 @@ class CommissionSlabSeeder extends Seeder
                 'label' => '1 kW Solar System',
                 'agent_commission' => 1000.00,
                 'super_agent_override' => 300.00,
+                'super_admin_rate' => 10000.00,
                 'description' => 'Ideal for small households',
                 'is_active' => false,
             ],
@@ -23,6 +24,7 @@ class CommissionSlabSeeder extends Seeder
                 'label' => '2 kW Solar System',
                 'agent_commission' => 1500.00,
                 'super_agent_override' => 400.00,
+                'super_admin_rate' => 20000.00,
                 'description' => 'Suitable for medium households',
                 'is_active' => false,
             ],
@@ -31,6 +33,7 @@ class CommissionSlabSeeder extends Seeder
                 'label' => '3 kW Solar System',
                 'agent_commission' => 2000.00,
                 'super_agent_override' => 500.00,
+                'super_admin_rate' => 30000.00,
                 'description' => 'Best for large families',
                 'is_active' => true,
             ],
@@ -39,6 +42,7 @@ class CommissionSlabSeeder extends Seeder
                 'label' => '4 kW Solar System',
                 'agent_commission' => 2500.00,
                 'super_agent_override' => 600.00,
+                'super_admin_rate' => 40000.00,
                 'description' => 'Commercial or large residential',
                 'is_active' => true,
             ],
@@ -47,6 +51,7 @@ class CommissionSlabSeeder extends Seeder
                 'label' => '5 kW Solar System',
                 'agent_commission' => 3000.00,
                 'super_agent_override' => 700.00,
+                'super_admin_rate' => 50000.00,
                 'is_active' => true,
             ],
             [
@@ -54,6 +59,7 @@ class CommissionSlabSeeder extends Seeder
                 'label' => '6 kW Solar System',
                 'agent_commission' => 3500.00,
                 'super_agent_override' => 800.00,
+                'super_admin_rate' => 60000.00,
                 'is_active' => true,
             ],
             [
@@ -61,6 +67,7 @@ class CommissionSlabSeeder extends Seeder
                 'label' => '7 kW Solar System',
                 'agent_commission' => 4000.00,
                 'super_agent_override' => 900.00,
+                'super_admin_rate' => 70000.00,
                 'is_active' => true,
             ],
             [
@@ -68,6 +75,7 @@ class CommissionSlabSeeder extends Seeder
                 'label' => '8 kW Solar System',
                 'agent_commission' => 4500.00,
                 'super_agent_override' => 1000.00,
+                'super_admin_rate' => 80000.00,
                 'is_active' => true,
             ],
             [
@@ -75,6 +83,7 @@ class CommissionSlabSeeder extends Seeder
                 'label' => '9 kW Solar System',
                 'agent_commission' => 5000.00,
                 'super_agent_override' => 1100.00,
+                'super_admin_rate' => 90000.00,
                 'is_active' => true,
             ],
             [
@@ -82,6 +91,7 @@ class CommissionSlabSeeder extends Seeder
                 'label' => '10 kW Solar System',
                 'agent_commission' => 5500.00,
                 'super_agent_override' => 1200.00,
+                'super_admin_rate' => 100000.00,
                 'is_active' => true,
             ],
         ];

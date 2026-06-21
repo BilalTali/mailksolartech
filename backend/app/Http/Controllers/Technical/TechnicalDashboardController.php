@@ -42,7 +42,7 @@ class TechnicalDashboardController extends Controller
                 'inventoryItems.inventoryItem', // Dispatched materials from admin
                 'statusLogs', // Support query history
             ])
-            ->orderByDesc('updated_at')
+            ->orderByRaw('updated_at desc')
             ->get()
             ->map(function (Lead $lead) {
                 // Build safe response — exclude admin-only billing/quotation data
@@ -136,7 +136,7 @@ class TechnicalDashboardController extends Controller
             'agreed_to_terms' => 'required|accepted',
         ]);
 
-        $lead = Lead::where('ulid', $ulid)->firstOrFail();
+        $lead = Lead::query()->where(['ulid' => $ulid])->firstOrFail();
 
         // ── Assignment guard ───────────────────────────────────────────
         if ($request->visit_type === 'site_survey' && $lead->assigned_surveyor_id !== $user->id) {
@@ -200,15 +200,8 @@ class TechnicalDashboardController extends Controller
             // Notify additional parties
             $this->leadService->notifyAdminTechnicalStatusChanged($lead, $user, $oldStatus, $newStatus);
 
-            if ($lead->assigned_super_agent_id) {
-                $this->leadService->notifySuperAgentStatusChanged($lead, $oldStatus, $newStatus, $user);
-            }
-            if ($lead->assigned_agent_id || $lead->submitted_by_agent_id) {
-                $this->leadService->notifyAgentStatusChanged($lead, $oldStatus, $newStatus, $user);
-            }
-            if ($lead->submitted_by_enumerator_id) {
-                $this->leadService->notifyEnumeratorStatusChanged($lead, $oldStatus, $newStatus, $user);
-            }
+
+
 
             return response()->json([
                 'message' => 'Visit recorded and status updated successfully.',
@@ -249,7 +242,7 @@ class TechnicalDashboardController extends Controller
             'agreed_to_terms' => 'required|accepted',
         ]);
 
-        $lead = Lead::where('ulid', $ulid)->firstOrFail();
+        $lead = Lead::query()->where(['ulid' => $ulid])->firstOrFail();
 
         // Assignment guard
         if ($lead->assigned_surveyor_id !== $user->id) {
@@ -355,17 +348,17 @@ class TechnicalDashboardController extends Controller
             'completed_surveys'       => (clone $baseQuery)->whereIn('status', ['SURVEY_DONE', 'SOLAR_INSTALLED', 'LEAD_COMPLETED'])->count(),
             'pending_installations'   => (clone $baseQuery)->whereIn('status', ['MATERIAL_VERIFIED_BY_CONSUMER', 'INSTALLATION_SCHEDULED', 'INSTALLATION_IN_PROGRESS'])->count(),
             'completed_installations' => (clone $baseQuery)->whereIn('status', ['SOLAR_INSTALLED', 'LEAD_COMPLETED'])->count(),
-            'unpaid_commission'       => (float) \App\Models\Commission::where('payee_id', $user->id)->unpaid()->sum('amount'),
-            'paid_commission'         => (float) \App\Models\Commission::where('payee_id', $user->id)->paid()->sum('amount'),
+            'unpaid_commission'       => (float) \App\Models\Commission::query()->where(['payee_id' => $user->id])->unpaid()->sum('amount'),
+            'paid_commission'         => (float) \App\Models\Commission::query()->where(['payee_id' => $user->id])->paid()->sum('amount'),
         ];
 
-        $recentActivity = LeadTechnicalVisit::where('technician_id', $user->id)
+        $recentActivity = LeadTechnicalVisit::query()->where(['technician_id' => $user->id])
             ->with([
                 'lead:id,ulid,beneficiary_name,beneficiary_mobile,beneficiary_address,beneficiary_district,beneficiary_state,submitted_by_agent_id,submitted_by_enumerator_id',
                 'lead.submittedByAgent:id,name,mobile',
                 'lead.submittedByEnumerator:id,name,mobile'
             ])
-            ->orderByDesc('created_at')
+            ->orderByRaw('created_at desc')
             ->limit(5)
             ->get()
             ->map(function ($visit) {
@@ -401,7 +394,7 @@ class TechnicalDashboardController extends Controller
             return response()->json(['error' => 'Unauthorized access'], 403);
         }
 
-        $commissions = \App\Models\Commission::where('payee_id', $user->id)
+        $commissions = \App\Models\Commission::query()->where(['payee_id' => $user->id])
             ->with(['lead', 'enteredBy', 'paidBy'])
             ->latest()
             ->paginate(20);
@@ -415,8 +408,8 @@ class TechnicalDashboardController extends Controller
                 'total' => $commissions->total(),
             ],
             'summary' => [
-                'unpaid_total' => (float) \App\Models\Commission::where('payee_id', $user->id)->unpaid()->sum('amount'),
-                'paid_total'   => (float) \App\Models\Commission::where('payee_id', $user->id)->paid()->sum('amount'),
+                'unpaid_total' => (float) \App\Models\Commission::query()->where(['payee_id' => $user->id])->unpaid()->sum('amount'),
+                'paid_total'   => (float) \App\Models\Commission::query()->where(['payee_id' => $user->id])->paid()->sum('amount'),
             ]
         ]);
     }
@@ -429,7 +422,7 @@ class TechnicalDashboardController extends Controller
 
         $request->validate(['message' => 'required|string']);
 
-        $lead = Lead::where('ulid', $ulid)->firstOrFail();
+        $lead = Lead::query()->where(['ulid' => $ulid])->firstOrFail();
 
         $log = $lead->statusLogs()->create([
             'from_status' => $lead->status,
@@ -444,5 +437,82 @@ class TechnicalDashboardController extends Controller
             'message' => 'Support task marked as completed.',
             'data' => $log
         ]);
+    }
+
+    /** Confirm receipt of materials (Technician/Installer action) */
+    public function confirmMaterialReceipt(Request $request, string $ulid)
+    {
+        $user = $request->user();
+        if (! $user->isFieldTechnician()) {
+            return response()->json(['error' => 'Unauthorized access'], 403);
+        }
+
+        $request->validate([
+            'condition'                 => 'required|string|in:good,damaged,missing_items',
+            'missing_or_damaged_notes'  => 'nullable|string',
+            'geo_photo_1'               => 'required|image|max:10240',
+            'geo_photo_2'               => 'required|image|max:10240',
+            'latitude'                  => 'required|numeric',
+            'longitude'                 => 'required|numeric',
+            'agreed_to_terms'           => 'required|accepted',
+        ]);
+
+        $lead = Lead::query()->where(['ulid' => $ulid])->firstOrFail();
+
+        // Check if assigned
+        if ($lead->assigned_installer_id !== $user->id && $lead->assigned_surveyor_id !== $user->id) {
+            return response()->json(['error' => 'You are not assigned to this lead.'], 403);
+        }
+
+        $path1 = null;
+        $path2 = null;
+
+        try {
+            DB::beginTransaction();
+
+            $path1 = $request->file('geo_photo_1')->store('installer_receipts', 'public');
+            $path2 = $request->file('geo_photo_2')->store('installer_receipts', 'public');
+
+            \App\Models\InstallerMaterialReceipt::create([
+                'lead_id'          => $lead->id,
+                'installer_id'     => $user->id,
+                'condition'        => $request->condition,
+                'notes'            => $request->missing_or_damaged_notes,
+                'geo_photo_1_path' => $path1,
+                'geo_photo_2_path' => $path2,
+                'latitude'         => $request->latitude,
+                'longitude'        => $request->longitude,
+                'items_received'   => null,
+            ]);
+
+            // Transition status to DELIVERED if it's currently pre-delivery
+            $pipeline = app(\App\Services\PipelineService::class);
+            $currentPos = $pipeline->positionOf($lead->status) ?? 0;
+            $deliveredPos = $pipeline->positionOf('DELIVERED') ?? 0;
+
+            if ($currentPos < $deliveredPos) {
+                $this->leadService->updateStatus(
+                    $lead,
+                    'DELIVERED',
+                    $user->id,
+                    'Material delivery confirmed by installer at site.'
+                );
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Material receipt confirmed successfully.',
+                'lead'    => $lead->fresh(['assignedSurveyor', 'assignedInstaller']),
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            if ($path1) Storage::disk('public')->delete($path1);
+            if ($path2) Storage::disk('public')->delete($path2);
+
+            return response()->json(['error' => 'Failed to confirm receipt: ' . $e->getMessage()], 500);
+        }
     }
 }

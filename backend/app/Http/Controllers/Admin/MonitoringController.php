@@ -228,14 +228,6 @@ class MonitoringController extends Controller
     /** Summary of Admin commission amounts (pending & paid) */
     public function commissionsSummary(): JsonResponse
     {
-        // Cleanup existing zero-amount unpaid admin commissions to prevent database pollution
-        $payeeRoleCol = 'payee_role';
-        $paymentStatusCol = 'payment_status';
-        $amountCol = 'amount';
-        Commission::where($payeeRoleCol, 'admin')
-            ->where($paymentStatusCol, 'unpaid')
-            ->where($amountCol, '<=', 0)
-            ->delete();
 
         $base = Commission::query()->where(fn($q) => $q->wherePayeeRole('admin'));
 
@@ -277,16 +269,9 @@ class MonitoringController extends Controller
     /** Paginated list of Admin commissions with optional status filter */
     public function commissionsList(Request $request): JsonResponse
     {
-        // Cleanup existing zero-amount unpaid admin commissions to prevent database pollution
-        $payeeRoleCol = 'payee_role';
-        $paymentStatusCol = 'payment_status';
-        $amountCol = 'amount';
-        Commission::where($payeeRoleCol, 'admin')
-            ->where($paymentStatusCol, 'unpaid')
-            ->where($amountCol, '<=', 0)
-            ->delete();
 
-        // Auto-create missing admin commissions so new leads immediately appear in Admin Settlements
+        // Auto-create missing admin commissions so ALL leads (including pre-disbursement ones)
+        // immediately appear in Admin Settlements — even if their financial allocation is still ₹0.
         $admin = User::roleAdmin()->first();
         if ($admin) {
             $missingLeads = Lead::whereDoesntHave('commissions', fn($q) => $q->wherePayeeRole('admin'))->get();
@@ -295,9 +280,8 @@ class MonitoringController extends Controller
                 $now = now();
                 foreach ($missingLeads as $lead) {
                     $amount = ((float)($lead->admin_received_commission ?? 0)) + ((float)($lead->admin_meeting_allowance ?? 0)) + ((float)($lead->admin_additional_expenses ?? 0));
-                    if ($amount <= 0) {
-                        continue;
-                    }
+                    // Do NOT skip ₹0 leads — they should still appear so the Super Admin
+                    // can see all pending leads before disbursement values are entered.
                     $insertData[] = [
                         'lead_id' => $lead->id,
                         'payee_id' => $lead->assigned_admin_id ?? $admin->id,
@@ -467,5 +451,143 @@ class MonitoringController extends Controller
             'data' => $log
         ]);
     }
-}
 
+    // ═══════════════════════════════════════════════════════════════════
+    // EARNINGS SUMMARY  — Super Admin top-level profit overview
+    // ═══════════════════════════════════════════════════════════════════
+
+    public function earningsSummary(Request $request): JsonResponse
+    {
+        $startDate = $request->input('start_date');
+        $endDate   = $request->input('end_date');
+
+        $leadQuery = Lead::query();
+        if ($startDate) $leadQuery->whereDate('created_at', '>=', $startDate);
+        if ($endDate)   $leadQuery->whereDate('created_at', '<=', $endDate);
+
+        $leads = $leadQuery->get();
+
+        $totalSystemRevenue   = (float) $leads->sum(fn($l) => (float) $l->lead_revenue);
+        $totalAllocatedAdmins = (float) $leads->sum(fn($l) => (float) $l->admin_received_commission);
+        $netSuperAdminProfit  = $totalSystemRevenue - $totalAllocatedAdmins;
+
+        // Per-capacity breakdown
+        $byCapacity = $leads->groupBy(fn($l) => $l->system_capacity)->map(function ($group, $cap) {
+            return [
+                'capacity'            => $cap ?: 'unknown',
+                'lead_count'          => $group->count(),
+                'total_revenue'       => (float) $group->sum(fn($l) => (float) $l->lead_revenue),
+                'total_allocated'     => (float) $group->sum(fn($l) => (float) $l->admin_received_commission),
+                'net'                 => (float) ($group->sum(fn($l) => (float) $l->lead_revenue) - $group->sum(fn($l) => (float) $l->admin_received_commission)),
+            ];
+        })->values();
+
+        // Monthly breakdown for chart (last 12 months)
+        $monthly = [];
+        for ($i = 11; $i >= 0; $i--) {
+            $month = now()->subMonths($i);
+            $monthLeads = $leads->filter(fn($l) => $l->created_at->format('Y-m') === $month->format('Y-m'));
+            $monthly[] = [
+                'month'          => $month->format('M Y'),
+                'revenue'        => (float) $monthLeads->sum(fn($l) => (float) $l->lead_revenue),
+                'allocated'      => (float) $monthLeads->sum(fn($l) => (float) $l->admin_received_commission),
+                'net'            => (float) ($monthLeads->sum(fn($l) => (float) $l->lead_revenue) - $monthLeads->sum(fn($l) => (float) $l->admin_received_commission)),
+                'lead_count'     => $monthLeads->count(),
+            ];
+        }
+
+        // Admin-wise breakdown
+        $adminBreakdown = $leads->whereNotNull('assigned_admin_id')->groupBy(fn($l) => $l->assigned_admin_id)
+            ->map(function ($group, $adminId) {
+                $admin = User::find($adminId);
+                return [
+                    'admin_id'        => $adminId,
+                    'admin_name'      => $admin?->name ?? 'Unknown',
+                    'lead_count'      => $group->count(),
+                    'total_revenue'   => (float) $group->sum(fn($l) => (float) $l->lead_revenue),
+                    'total_allocated' => (float) $group->sum(fn($l) => (float) $l->admin_received_commission),
+                    'net'             => (float) ($group->sum(fn($l) => (float) $l->lead_revenue) - $group->sum(fn($l) => (float) $l->admin_received_commission)),
+                ];
+            })->values();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'total_system_revenue'    => $totalSystemRevenue,
+                'total_allocated_admins'  => $totalAllocatedAdmins,
+                'net_super_admin_profit'  => $netSuperAdminProfit,
+                'pending_settlements'     => (float) Commission::wherePayeeRole('admin')->wherePaymentStatus('unpaid')->sum('amount'),
+                'total_leads'             => $leads->count(),
+                'disbursed_leads'         => $leads->whereNotNull('admin_received_commission')->count(),
+                'by_capacity'             => $byCapacity,
+                'monthly_trend'           => $monthly,
+                'admin_breakdown'         => $adminBreakdown,
+            ],
+        ]);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // LEDGER APPROVALS  — Super Admin reviews admin ledger entries
+    // ═══════════════════════════════════════════════════════════════════
+
+    public function pendingLedgerApprovals(Request $request): JsonResponse
+    {
+        $query = \App\Models\AdminLedger::with(['admin:id,name,role', 'createdBy:id,name,role'])
+            ->whereStatus('pending')
+            ->latest();
+
+        $perPage = (int) $request->input('per_page', 20);
+        $items   = $query->paginate($perPage);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $items->items(),
+            'meta'    => [
+                'current_page' => $items->currentPage(),
+                'last_page'    => $items->lastPage(),
+                'total'        => $items->total(),
+            ],
+        ]);
+    }
+
+    public function approveLedger(Request $request, int $id): JsonResponse
+    {
+        $entry = \App\Models\AdminLedger::findOrFail($id);
+
+        if ($entry->status !== 'pending') {
+            return response()->json(['success' => false, 'message' => 'This entry is already ' . $entry->status . '.'], 422);
+        }
+
+        $entry->update([
+            'status'     => 'approved',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Ledger entry approved.',
+            'data'    => $entry->fresh(['admin', 'createdBy']),
+        ]);
+    }
+
+    public function rejectLedger(Request $request, int $id): JsonResponse
+    {
+        $request->validate(['reason' => 'nullable|string|max:500']);
+
+        $entry = \App\Models\AdminLedger::findOrFail($id);
+
+        if ($entry->status !== 'pending') {
+            return response()->json(['success' => false, 'message' => 'This entry is already ' . $entry->status . '.'], 422);
+        }
+
+        $entry->update([
+            'status'           => 'rejected',
+            'rejection_reason' => $request->reason ?? 'Rejected by Super Admin.',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Ledger entry rejected.',
+            'data'    => $entry->fresh(['admin', 'createdBy']),
+        ]);
+    }
+}

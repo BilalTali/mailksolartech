@@ -30,6 +30,7 @@ export default function SuperAdminMonitorLeadsPage() {
     const [selectedLead, setSelectedLead] = useState<{
         ulid: string, 
         name: string,
+        systemCapacity?: string | null,
         initialAllocation?: {
             lead_revenue?: number,
             commission: number,
@@ -329,9 +330,9 @@ export default function SuperAdminMonitorLeadsPage() {
 
                                                 {role === 'super_admin' && (
                                                     <>
-                                                        {['DISBURSEMENT_VERIFIED', 'POD_SUCCESSFUL', 'COMPLETED'].includes(lead.status) && lead.admin_received_commission === null && (
+                        {['DISBURSEMENT_VERIFIED', 'POD_SUCCESSFUL', 'COMPLETED'].includes(lead.status) && lead.admin_received_commission === null && (
                                                             <button 
-                                                                onClick={() => setSelectedLead({ ulid: lead.ulid, name: lead.beneficiary_name })}
+                                                                onClick={() => setSelectedLead({ ulid: lead.ulid, name: lead.beneficiary_name, systemCapacity: lead.system_capacity })}
                                                                 className="px-2 py-1 bg-indigo-50 border border-indigo-100 rounded-md text-[10px] font-bold text-indigo-700 hover:bg-indigo-100 transition-colors inline-flex items-center gap-1 uppercase tracking-wider whitespace-nowrap"
                                                             >
                                                                 <IndianRupee size={10} /> Pass Profit
@@ -342,6 +343,7 @@ export default function SuperAdminMonitorLeadsPage() {
                                                                 onClick={() => setSelectedLead({ 
                                                                     ulid: lead.ulid, 
                                                                     name: lead.beneficiary_name,
+                                                                    systemCapacity: lead.system_capacity,
                                                                     initialAllocation: {
                                                                         lead_revenue: Number(lead.lead_revenue) || 0,
                                                                         commission: Number(lead.admin_received_commission) || 0,
@@ -373,7 +375,8 @@ export default function SuperAdminMonitorLeadsPage() {
                 isOpen={!!selectedLead} 
                 onClose={() => setSelectedLead(null)} 
                 leadUlid={selectedLead?.ulid || ''} 
-                beneficiaryName={selectedLead?.name || ''} 
+                beneficiaryName={selectedLead?.name || ''}
+                systemCapacity={selectedLead?.systemCapacity}
                 initialAllocation={selectedLead?.initialAllocation}
             />
 

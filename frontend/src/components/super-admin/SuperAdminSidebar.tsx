@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, Users, Shield, FileText, Monitor, LogOut, ShieldAlert,
-    IndianRupee, Landmark, Sparkles, Package, Bell, Truck
+    IndianRupee, Landmark, Sparkles, Package, Bell, Truck, Percent
 } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -22,6 +22,7 @@ const NAV_CATEGORIES = [
         items: [
             { icon: <Landmark className="w-5 h-5" />, label: 'Banking', to: '/super-admin/banking' },
             { icon: <IndianRupee className="w-5 h-5" />, label: 'Commission Settlements', to: '/super-admin/commissions' },
+            { icon: <Percent className="w-5 h-5" />, label: 'Commission Rates', to: '/super-admin/commission-rates' },
             { icon: <FileText className="w-5 h-5" />, label: 'Ledger Approvals', to: '/super-admin/ledger-workflow' },
         ]
     },

@@ -531,6 +531,23 @@ $api->as('api.v1.')->group(function () {
             Route::get('/commissions/profit-ledger', [\App\Http\Controllers\Admin\AdminCommissionController::class, 'profitLedger']);
             Route::get('/commissions/profit-ledger/export', [\App\Http\Controllers\Admin\AdminCommissionController::class, 'exportProfitLedger']);
 
+            // Commission Slab Rate Management (Super Admin sets ₹/kW rates for Admins)
+            Route::prefix('commission-slabs')->group(function () {
+                Route::get('/', [\App\Http\Controllers\SuperAdmin\SuperAdminCommissionSlabController::class, 'index']);
+                Route::put('/bulk', [\App\Http\Controllers\SuperAdmin\SuperAdminCommissionSlabController::class, 'bulkUpdate']);
+                Route::put('/{id}', [\App\Http\Controllers\SuperAdmin\SuperAdminCommissionSlabController::class, 'update']);
+                Route::get('/rate/{capacity}', [\App\Http\Controllers\SuperAdmin\SuperAdminCommissionSlabController::class, 'getRateForCapacity']);
+            });
+
+            // Earnings Overview (Super Admin monitors system-level profit)
+            Route::get('/earnings/summary', [MonitoringController::class, 'earningsSummary']);
+
+            // Admin Ledger Approvals (Super Admin approves/rejects admin credit requests)
+            Route::get('/ledger-approvals', [MonitoringController::class, 'pendingLedgerApprovals']);
+            Route::put('/ledger-approvals/{id}/approve', [MonitoringController::class, 'approveLedger']);
+            Route::put('/ledger-approvals/{id}/reject', [MonitoringController::class, 'rejectLedger']);
+
+
             // ── Global Inventory Catalogue (SA-ONLY: Admins cannot create/modify global stock) ──
             Route::apiResource('inventory-items', \App\Http\Controllers\Admin\InventoryController::class);
 

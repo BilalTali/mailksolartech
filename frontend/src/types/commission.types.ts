@@ -172,6 +172,7 @@ export interface CommissionSlab {
     agent_commission: number;
     super_agent_override: number;
     enumerator_commission: number;
+    super_admin_rate?: number;
     description: string | null;
     is_active: boolean;
     super_agent_id: number | null;

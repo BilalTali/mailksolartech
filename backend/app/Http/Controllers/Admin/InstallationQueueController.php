@@ -19,7 +19,7 @@ class InstallationQueueController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $query = Lead::where('status', 'SOLAR_INSTALLED')
+        $query = Lead::query()->where('status', 'SOLAR_INSTALLED')
             ->with([
                 'assignedInstaller', 
                 'assignedSurveyor', 
@@ -48,7 +48,7 @@ class InstallationQueueController extends Controller
             });
         }
 
-        $query->orderBy('updated_at', 'asc');
+        $query->orderBy('updated_at', 'desc');
 
         return response()->json([
             'success' => true,
@@ -58,7 +58,7 @@ class InstallationQueueController extends Controller
 
     public function verify(Request $request, string $ulid)
     {
-        $lead = Lead::where('ulid', $ulid)->firstOrFail();
+        $lead = Lead::query()->where('ulid', $ulid)->firstOrFail();
 
         $this->leadService->updateStatus(
             lead: $lead,
@@ -81,7 +81,7 @@ class InstallationQueueController extends Controller
             'reason' => 'required|string|max:500'
         ]);
 
-        $lead = Lead::where('ulid', $ulid)->firstOrFail();
+        $lead = Lead::query()->where('ulid', $ulid)->firstOrFail();
 
         // Move status back to INSTALLATION_IN_PROGRESS so the installer can see and resubmit
         $reason = $request->input('reason');
@@ -108,6 +108,23 @@ class InstallationQueueController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Installation rejected and installer notified.'
+        ]);
+    }
+
+    public function dispatchToInstaller(Request $request, string $ulid)
+    {
+        $lead = Lead::query()->where('ulid', $ulid)->firstOrFail();
+
+        $this->leadService->updateStatus(
+            lead: $lead,
+            newStatus: 'INSTALLATION_IN_PROGRESS',
+            changedById: $request->user()->id,
+            notes: 'Dispatched to installer.'
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Dispatched to installer successfully.'
         ]);
     }
 }

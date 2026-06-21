@@ -43,7 +43,7 @@ class LeadService
                         ->where('agent_id', $referralCode)
                         ->orWhere('super_agent_code', $referralCode)
                     )
-                    ->where('status', 'active')
+                    ->where(['status' => 'active'])
                     ->whereIn('role', ['agent', 'super_agent'])
                     ->first();
                 /** @var User|null $referringUser */
@@ -324,8 +324,8 @@ class LeadService
         return DB::transaction(function () use ($lead, $agent, $reason) {
             // HIGH-08: Guard against reverting leads that already have paid commissions.
             // Also revoke any unpaid commission entries and revert offer points.
-            $hasPaidCommissions = \App\Models\Commission::where('lead_id', $lead->id)
-                ->where('payment_status', 'paid')
+            $hasPaidCommissions = \App\Models\Commission::query()->where(['lead_id' => $lead->id])
+                ->where(['payment_status' => 'paid'])
                 ->exists();
 
             if ($hasPaidCommissions) {
@@ -708,8 +708,8 @@ class LeadService
                     // BATCH 2.1: Downward Transition Protection
                     // Block the transition if any commission has already been physically paid.
                     $hasPaidCommissions = \App\Models\Commission::query()
-                        ->where('lead_id', $lead->id)
-                        ->where('payment_status', 'paid')
+                        ->where(['lead_id' => $lead->id])
+                        ->where(['payment_status' => 'paid'])
                         ->exists();
                         
                     if ($hasPaidCommissions) {
@@ -749,8 +749,9 @@ class LeadService
             }
 
             // AUTO-PROPAGATION: Admin/SA changes → notify downstream parties
+            // BATCH 2.2: Also propagate Field Technician changes upwards to SA/Agent automatically
             if ($changer) {
-                if ($changer->isAdmin()) {
+                if ($changer->isAdmin() || $changer->isFieldTechnician()) {
                     if ($lead->assigned_super_agent_id) {
                         $this->notifySuperAgentStatusChanged($lead, $oldStatus, $newStatus, $changer);
                     }

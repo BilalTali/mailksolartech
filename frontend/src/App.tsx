@@ -140,6 +140,7 @@ const SuperAdminMonitorLeadsPage = lazy(() => import('@/pages/super-admin/SuperA
 const SuperAdminStockDispatchPage = lazy(() => import('@/pages/super-admin/SuperAdminStockDispatchPage'));
 const SuperAdminLoginPage = lazy(() => import('@/pages/super-admin/SuperAdminLoginPage'));
 const SuperAdminCommissionsPage = lazy(() => import('@/pages/super-admin/SuperAdminCommissionsPage'));
+const SuperAdminCommissionRatesPage = lazy(() => import('@/pages/super-admin/SuperAdminCommissionRatesPage'));
 const SuperAdminProfilePage = lazy(() => import('@/pages/super-admin/SuperAdminProfilePage'));
 const SuperAdminGlobalSettingsPage = lazy(() => import('@/pages/super-admin/SuperAdminGlobalSettingsPage'));
 const SuperAdminSystemSupportPage = lazy(() => import('@/pages/super-admin/SuperAdminSystemSupportPage'));
@@ -384,6 +385,7 @@ export default function App() {
             <Route path="banking" element={<AdminBankingPage />} />
             <Route path="admins" element={<SuperAdminAdminsPage />} />
             <Route path="commissions" element={<SuperAdminCommissionsPage />} />
+            <Route path="commission-rates" element={<SuperAdminCommissionRatesPage />} />
             <Route path="ledger-workflow" element={<SuperAdminLedgerWorkflowPage />} />
             <Route path="monitor/super-agents" element={<SuperAdminMonitorSuperAgentsPage />} />
             <Route path="monitor/agents" element={<SuperAdminMonitorAgentsPage />} />

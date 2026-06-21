@@ -297,19 +297,25 @@ export default function SuperAdminCommissionsPage() {
                                         <div className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-1">Allowance</div>
                                     </td>
                                     <td className="px-6 py-6 whitespace-nowrap">
-                                        <div className="px-4 py-2 bg-emerald-50 rounded-2xl w-fit">
-                                            <span className="text-sm text-emerald-600 font-black tracking-tight">
+                                        <div className={`px-4 py-2 rounded-2xl w-fit ${Number(c.amount) > 0 ? 'bg-emerald-50' : 'bg-amber-50'}`}>
+                                            <span className={`text-sm font-black tracking-tight ${Number(c.amount) > 0 ? 'text-emerald-600' : 'text-amber-500'}`}>
                                                 ₹{Number(c.amount).toLocaleString('en-IN')}
                                             </span>
                                         </div>
                                     </td>
                                     <td className="px-6 py-6 whitespace-nowrap">
-                                        <span className={`px-3 py-1.5 rounded-xl text-[9px] uppercase font-black tracking-widest ${STATUS_STYLE[c.payment_status] || 'bg-slate-100 text-slate-600'}`}>
-                                            {c.payment_status}
+                                        <span className={`px-3 py-1.5 rounded-xl text-[9px] uppercase font-black tracking-widest ${
+                                            Number(c.amount) <= 0
+                                                ? 'bg-slate-100 text-slate-400'
+                                                : STATUS_STYLE[c.payment_status] || 'bg-slate-100 text-slate-600'
+                                        }`}>
+                                            {Number(c.amount) <= 0 ? 'Pending' : c.payment_status}
                                         </span>
                                     </td>
                                     <td className="px-6 py-6">
-                                        {c.payment_status === 'unpaid' ? (
+                                        {Number(c.amount) <= 0 ? (
+                                            <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Awaiting Disbursal</div>
+                                        ) : c.payment_status === 'unpaid' ? (
                                             <button
                                                 onClick={() => { setShowPaidModal(c); setPaymentForm({ method: 'bank_transfer', ref: '', notes: '' }); }}
                                                 className="px-5 py-2.5 bg-indigo-600 text-white rounded-2xl text-[11px] font-black hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 transform hover:-translate-y-0.5 active:translate-y-0 uppercase tracking-widest"
